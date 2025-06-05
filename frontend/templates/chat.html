@@ -1,0 +1,138 @@
+
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Chat Turing Test</title>
+    <script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.js" integrity="sha384-oeUn82QNXPuVkGCkcrInrS1twIxKhkZiFfr2TdiuObZ3n3yIeMiqcRzkIcguaof1" crossorigin="anonymous"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        html{
+            font-size: 18px;
+        }
+
+        body {
+            background-color: darkgrey;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            height: 100vh;
+        }
+        @media (max-length: 768px){
+            html{
+                font-size: 14px;
+            }
+        }
+
+        .chat-container {
+            padding: 1rem;
+            height: 20rem;
+            width: 30rem;
+            background-color: beige;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message {
+            max-width: 60%;
+            padding: 0.75rem 1rem;
+            margin-bottom: 10px;
+            border-radius: 1rem;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+
+        .user-message {
+            align-self: flex-end;
+            background-color: #2563eb;
+            color: white;
+        }
+
+        .bot-message {
+            align-self: flex-start;
+            background-color: #e5e7eb;
+            color: #111827;
+        }
+
+        .chat-form {
+            display: flex;
+            padding: 1rem;
+            border-top: 1px solid #d1d5db;
+            background-color: white;
+            width: 30rem;
+        }
+
+        .chat-form input[type="text"] {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: 1px solid #ccc;
+            border-radius: 1rem;
+            font-size: 1rem;
+        }
+
+        .chat-form button {
+            margin-left: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 1rem;
+            background-color: #2563eb;
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        .chat-form button:hover {
+            background-color: #1e40af;
+        }
+    </style>
+</head>
+<body>
+
+<div class="chat-container" id="chat">
+    <div class="bot-message message">Ciao! Come posso aiutarti oggi?</div>
+</div>
+
+<form class="chat-form" id="chatForm">
+    <input type="text" id="messageInput" placeholder="Scrivi un messaggio..." required />
+    <button type="submit">Invia</button>
+</form>
+
+<script>
+    const form = document.getElementById('chatForm');
+    const input = document.getElementById('messageInput');
+    const chat = document.getElementById('chat');
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const text = input.value.trim();
+        if (!text) return;
+
+        // Aggiungi messaggio utente
+        const userMsg = document.createElement('div');
+        userMsg.className = 'user-message message';
+        userMsg.textContent = text;
+        chat.appendChild(userMsg);
+        chat.scrollTop = chat.scrollHeight;
+
+        input.value = '';
+
+        // (Facoltativo) Simula risposta IA
+        setTimeout(() => {
+            const botMsg = document.createElement('div');
+            botMsg.className = 'bot-message message';
+            botMsg.textContent = "Hai detto: " + text;
+            chat.appendChild(botMsg);
+            chat.scrollTop = chat.scrollHeight;
+        }, 800);
+    });
+</script>
+
+</body>
+</html>
