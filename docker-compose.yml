@@ -1,0 +1,34 @@
+services:
+  mariadb:
+    image: mariadb:10.5
+    environment:
+      MARIADB_ROOT_PASSWORD: pwd
+    ports:
+      - "3307:3306"
+    container_name: mariadb
+    volumes:
+      - ./mariadb_init:/docker-entrypoint-initdb.d  # Uses the init.sql file to create the DB
+      - ./mariadb_data:/var/lib/mysql # Creates the mariadb_data folder and saves the DB data in it
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-ppwd"]
+      interval: 10s
+      retries: 5
+      timeout: 5s
+      start_period: 20s
+
+  backend:
+    build: ./backend
+    ports:
+      - "8003:8003"
+    container_name: backend
+    depends_on:
+      mariadb:
+        condition: service_healthy # Backend container starts after the mariadb one
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "8001:8001"
+    container_name: frontend 
+    depends_on:
+      - backend # Frontend container starts after the backend one
