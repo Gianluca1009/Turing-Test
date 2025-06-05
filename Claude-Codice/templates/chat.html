@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Chat Turing Test</title>
+    <script
+      src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.js"
+      integrity="sha384-oeUn82QNXPuVkGCkcrInrS1twIxKhkZiFfr2TdiuObZ3n3yIeMiqcRzkIcguaof1"
+      crossorigin="anonymous"
+    ></script>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        font-size: 18px;
+      }
+
+      body {
+        background-color: darkgrey;
+        margin: 0;
+        font-family: Arial, sans-serif;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        height: 100vh;
+      }
+
+      @media (max-width: 768px) {
+        html {
+          font-size: 14px;
+        }
+      }
+
+      .chat-container {
+        padding: 1rem;
+        height: 20rem;
+        width: 30rem;
+        background-color: beige;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .message {
+        max-width: 60%;
+        padding: 0.75rem 1rem;
+        margin-bottom: 10px;
+        border-radius: 1rem;
+        line-height: 1.4;
+        word-wrap: break-word;
+      }
+
+      .user-message {
+        align-self: flex-end;
+        background-color: #2563eb;
+        color: white;
+      }
+
+      .bot-message {
+        align-self: flex-start;
+        background-color: #e5e7eb;
+        color: #111827;
+      }
+
+      .loading-message {
+        align-self: flex-start;
+        background-color: #f3f4f6;
+        color: #6b7280;
+        font-style: italic;
+      }
+
+      .chat-form {
+        display: flex;
+        padding: 1rem;
+        border-top: 1px solid #d1d5db;
+        background-color: white;
+        width: 30rem;
+      }
+
+      .chat-form input[type="text"] {
+        flex: 1;
+        padding: 0.75rem 1rem;
+        border: 1px solid #ccc;
+        border-radius: 1rem;
+        font-size: 1rem;
+      }
+
+      .chat-form button {
+        margin-left: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 1rem;
+        background-color: #2563eb;
+        color: white;
+        font-size: 1rem;
+        cursor: pointer;
+      }
+
+      .chat-form button:hover {
+        background-color: #1e40af;
+      }
+
+      .chat-form button:disabled {
+        background-color: #9ca3af;
+        cursor: not-allowed;
+      }
+
+      .error-message {
+        align-self: center;
+        background-color: #fef2f2;
+        color: #dc2626;
+        border: 1px solid #fecaca;
+        max-width: 80%;
+      }
+
+      /* Indicatore di caricamento HTMX */
+      .htmx-request .loading-indicator {
+        display: inline;
+      }
+      .loading-indicator {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="chat-container" id="chat">
+      <div class="bot-message message">Ciao! Come posso aiutarti oggi?</div>
+      <!-- I messaggi verranno aggiunti qui da HTMX -->
+      <div id="messages-container"></div>
+    </div>
+
+    <form
+      class="chat-form"
+      hx-post="/send-message"
+      hx-target="#messages-container"
+      hx-swap="beforeend"
+      hx-on::after-request="this.reset(); document.getElementById('chat').scrollTop = document.getElementById('chat').scrollHeight;"
+    >
+      <input
+        type="text"
+        name="message"
+        id="messageInput"
+        placeholder="Scrivi un messaggio..."
+        required
+        autocomplete="off"
+      />
+
+      <button type="submit">
+        <span class="loading-indicator">Invio...</span>
+        <span class="htmx-request:hidden">Invia</span>
+      </button>
+    </form>
+
+    <!-- Indicatore di caricamento globale -->
+    <div id="loading" class="htmx-request">
+      <style>
+        #loading {
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          background: rgba(0, 0, 0, 0.8);
+          color: white;
+          padding: 1rem 2rem;
+          border-radius: 0.5rem;
+          font-size: 1.2rem;
+          z-index: 1000;
+          display: none;
+        }
+        .htmx-request #loading {
+          display: block;
+        }
+      </style>
+      Invio in corso...
+    </div>
+  </body>
+</html>

@@ -1,0 +1,6 @@
+<!-- Template per visualizzare tutti i messaggi -->
+{% for message in messages %} {% if message.sender == "user" %}
+<div class="user-message message">{{ message.text }}</div>
+{% else %}
+<div class="bot-message message">{{ message.text }}</div>
+{% endif %} {% endfor %}
