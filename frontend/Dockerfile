@@ -1,31 +1,27 @@
-# Copiato dall'esonero, da cambiare forse
+# Stage 1: Build
+FROM node:20-alpine as build
 
-FROM alpine 
-# python?
-
-# Set the container working directory
 WORKDIR /app
 
-# Copies requirements.txt into the working directory
-COPY requirements.txt .
+# Copia file package.json e package-lock.json per installare dipendenze
+COPY package*.json ./
 
-# Installs dependencies from requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+RUN npm install
 
-# Copies the content of src folder in the /app/src folder
-COPY src /app/src
+# Copia tutto il codice
+COPY . .
 
-# Copies static folder
-COPY static /app/static
+# Costruisci la build di produzione (dipende dal tuo setup: qui per CRA o Vite)
+RUN npm run build
 
-# Copies templates folder
-COPY templates /app/templates
+# Stage 2: Serve la build statica con nginx
+FROM nginx:stable-alpine
 
-# Includes src folder to the path
-ENV PYTHONPATH=/app/src
+# Copia la build generata nel percorso dove nginx serve i file
+COPY --from=build /app/dist /usr/share/nginx/html
 
-# Expose port 8001
-EXPOSE 8001
+# Espone la porta 80
+EXPOSE 80
 
-# Runs the app with uvicorn
-CMD ["uvicorn", "frontend.server.frontend_server:app", "--host", "0.0.0.0", "--port", "8001"]
+# Comando di default per nginx (già presente nell'immagine)
+CMD ["nginx", "-g", "daemon off;"]

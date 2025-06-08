@@ -1,6 +1,6 @@
 import './App.css'
 import { Routes, Route } from 'react-router-dom';
-import Chat from './pages/chat';
+import Chat from './pages/Chat';
 import Index from './pages/Index';
 import Header from './pages/Header';
 
