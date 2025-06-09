@@ -46,12 +46,13 @@ button {
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
   cursor: pointer;
   transition: border-color 0.25s;
+  background-color: transparent; /* Rimuovi il colore fisso */
+  color: inherit; /* Eredita il colore del testo */
 }
 button:hover {
-  border-color: #646cff;
+  border-color: #18581a;
 }
 button:focus,
 button:focus-visible {
@@ -60,14 +61,14 @@ button:focus-visible {
 
 @media (prefers-color-scheme: light) {
   :root {
-    color: #213547;
+    color: #1a5425;
     background-color: #ffffff;
   }
   a:hover {
     color: #747bff;
   }
   button {
-    background-color: #f9f9f9;
+    background-color: transparent; /* anche in light mode rimuovi colore fisso */
   }
 }
 

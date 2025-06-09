@@ -6,7 +6,7 @@ import Header from './pages/Header';
 import { useEffect, useState } from 'react';
 
 function App() {
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState(true);
 
   // Applica la classe 'dark' all'elemento <html> per Tailwind
   useEffect(() => {
