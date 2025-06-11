@@ -1,24 +1,27 @@
 import { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
 
-// Connect to Socket.IO server. Use backend on localhost by default
-const socket = io('http://localhost:8003');
-
 function Chat() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
+  const socketRef = useRef(null);
 
   // Listen for incoming messages from the server
   useEffect(() => {
+    const socket = io('http://backend:8003');
+    socketRef.current = socket;
+
+    socket.emit('find_chat');
+
     socket.on('chat_message', (msg) => {
       setMessages((prev) => [...prev, msg]);
     });
 
-    // initial welcome message
-    setMessages([{ from: 'bot', text: 'Ciao! Come posso aiutarti oggi?' }]);
+    // 3️⃣ Messaggio iniziale
+    setMessages([{ from: 'bot', text: 'Ciao! Sto cercando un partner con cui chattare...' }]);
 
     return () => {
-      socket.off('chat_message');
+      socket.disconnect();
     };
   }, []);
 

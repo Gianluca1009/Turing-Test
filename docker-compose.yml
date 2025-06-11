@@ -1,16 +1,18 @@
 services:
   frontend:
+    container_name: frontend
     build:
       context: ./frontend
       dockerfile: Dockerfile
     ports:
-      - "80:80"
+      - "8080:80"
     depends_on:
       - backend
     environment:
       - BACKEND_URL=http://backend:8003
 
   backend:
+    container_name: backend
     build:
       context: ./backend
       dockerfile: Dockerfile
