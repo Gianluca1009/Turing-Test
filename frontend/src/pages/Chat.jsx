@@ -7,18 +7,24 @@ function Chat() {
   const socketRef = useRef(null);
 
   // Listen for incoming messages from the server
+  const [socketId, setSocketId] = useState(null);
+
   useEffect(() => {
     const socket = io('http://localhost:8003');
     socketRef.current = socket;
 
     socket.emit('find_chat');
 
+    // salva il socket ID appena connesso
+    socket.on('connect', () => {
+      setSocketId(socket.id);
+    });
+
     socket.on('chat_message', (msg) => {
       setMessages((prev) => [...prev, msg]);
     });
 
-    // 3️⃣ Messaggio iniziale
-    setMessages([{ from: 'bot', text: 'Ciao! Sto cercando un partner con cui chattare...' }]);
+    setMessages([{ sender: 'bot', text: 'Ciao! Sto cercando un partner con cui chattare...' }]);
 
     return () => {
       socket.disconnect();
@@ -55,14 +61,17 @@ function Chat() {
               <div
                 key={index}
                 className={`max-w-xs px-5 py-3 rounded-xl break-words transition-colors duration-300 ${
-                  msg.from === 'user'
-                    ? 'ml-auto bg-green-500 text-black shadow-lg'
-                    : 'mr-auto bg-gray-200 dark:bg-gray-800 text-green-600 dark:text-green-300 shadow-inner'
+                  msg.sender === socketId
+                    ? 'ml-auto bg-green-500 text-black shadow-lg'    // mio messaggio, a destra
+                    : msg.sender === 'bot'
+                      ? 'mx-auto text-center text-sm text-gray-400 italic'  // messaggio iniziale
+                      : 'mr-auto bg-gray-200 dark:bg-gray-800 text-green-600 dark:text-green-300 shadow-inner' // messaggio ricevuto
                 }`}
               >
                 {msg.text}
               </div>
             ))}
+
           </main>
 
           <footer className="p-5 bg-gray-200 dark:bg-black border-t border-green-600 flex gap-3 rounded-b-3xl transition-colors duration-300">
