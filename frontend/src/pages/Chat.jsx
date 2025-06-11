@@ -1,18 +1,33 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { io } from 'socket.io-client';
+
+// Connect to Socket.IO server. Use backend on localhost by default
+const socket = io('http://localhost:8003');
 
 function Chat() {
-  const [messages, setMessages] = useState([
-    { from: 'bot', text: 'Ciao! Come posso aiutarti oggi?' },
-  ]);
+  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
+
+  // Listen for incoming messages from the server
+  useEffect(() => {
+    socket.on('chat_message', (msg) => {
+      setMessages((prev) => [...prev, msg]);
+    });
+
+    // initial welcome message
+    setMessages([{ from: 'bot', text: 'Ciao! Come posso aiutarti oggi?' }]);
+
+    return () => {
+      socket.off('chat_message');
+    };
+  }, []);
 
   const sendMessage = () => {
     if (!input.trim()) return;
 
-    const userMessage = { from: 'user', text: input };
-    const botReply = { from: 'bot', text: 'Hai detto: ' + input };
-
-    setMessages([...messages, userMessage, botReply]);
+    const msg = { from: 'user', text: input };
+    // emit message to server
+    socket.emit('chat_message', msg);
     setInput('');
   };
 
