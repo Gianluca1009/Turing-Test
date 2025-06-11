@@ -19,11 +19,10 @@ app.add_middleware(
 )
 
 # Dizionario delle lobby di attesa
-lobbies: dict[str, list[str, str]] = {}
+lobbies: dict[str, list[str]] = {}
 
 @sio.event
-async def connect (sid):
-    """ Stampa l'id dell'utente appena connesso """
+async def connect(sid, environ, auth):
     logging.info(f"Client connected: {sid}")
 
 @sio.event

@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
+import { useState, useEffect, useRef } from 'react'
 
 function Chat() {
   const [messages, setMessages] = useState([]);
@@ -8,7 +8,7 @@ function Chat() {
 
   // Listen for incoming messages from the server
   useEffect(() => {
-    const socket = io('http://backend:8003');
+    const socket = io('http://localhost:8003');
     socketRef.current = socket;
 
     socket.emit('find_chat');
@@ -30,7 +30,7 @@ function Chat() {
 
     const msg = { from: 'user', text: input };
     // emit message to server
-    socket.emit('chat_message', msg);
+    socketRef.current.emit('chat_message', msg);
     setInput('');
   };
 
