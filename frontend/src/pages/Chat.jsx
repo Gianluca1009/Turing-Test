@@ -9,34 +9,43 @@ function Chat() {
   // Listen for incoming messages from the server
   const [socketId, setSocketId] = useState(null);
 
-  useEffect(() => {
-    const socket = io('http://localhost:8003');
-    socketRef.current = socket;
+useEffect(() => {
+  const socket = io('http://localhost:8003');
+  socketRef.current = socket;
 
-    socket.emit('find_chat');
+  socket.on('connect', () => {
+    setSocketId(socket.id);
 
-    // salva il socket ID appena connesso
-    socket.on('connect', () => {
-      setSocketId(socket.id);
-    });
-
-    socket.on('chat_message', (msg) => {
-      setMessages((prev) => [...prev, msg]);
-    });
-
-    setMessages([{ sender: 'bot', text: 'Ciao! Sto cercando un partner con cui chattare...' }]);
-
-    return () => {
-      socket.disconnect();
+    const user = {
+      username: 'user',
+      sid: socket.id   
     };
-  }, []);
+
+    socket.emit('find_chat', user);
+  });
+
+  socket.on('chat_message', (msg) => {
+    setMessages((prev) => [...prev, msg]);
+  });
+
+  return () => {
+    socket.disconnect();
+  };
+}, []);
 
   const sendMessage = () => {
     if (!input.trim()) return;
 
-    const msg = { from: 'user', text: input };
+    const message = {
+        sender: {
+          username: 'user', 
+          sid: socketRef.current.id
+        },
+        text: input
+    }
+
     // emit message to server
-    socketRef.current.emit('chat_message', msg);
+    socketRef.current.emit('chat_message', message);
     setInput('');
   };
 
@@ -61,9 +70,9 @@ function Chat() {
               <div
                 key={index}
                 className={`max-w-xs px-5 py-3 rounded-xl break-words transition-colors duration-300 ${
-                  msg.sender === socketId
+                  msg.sender.sid === socketId
                     ? 'ml-auto bg-green-500 text-black shadow-lg'    // mio messaggio, a destra
-                    : msg.sender === 'bot'
+                    : msg.sender.sid === 'bot'
                       ? 'mx-auto text-center text-sm text-gray-400 italic'  // messaggio iniziale
                       : 'mr-auto bg-gray-200 dark:bg-gray-800 text-green-600 dark:text-green-300 shadow-inner' // messaggio ricevuto
                 }`}
