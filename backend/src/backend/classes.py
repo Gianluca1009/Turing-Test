@@ -1,14 +1,17 @@
 from pydantic import BaseModel
 from typing import Optional
 
+# Gestisce i dati relativi a un utente
 class User(BaseModel):
     username: str
     sid: str
 
+# Contiene i dati relativi a un messaggio
 class Message(BaseModel):
     text: str
     sender: User
     
+# Contiene i dati relativi a una lobby
 class Lobby(BaseModel):
     messages: list[Message]
     lobby_id: str

@@ -1,8 +1,8 @@
 import './App.css';
 import { Routes, Route } from 'react-router-dom';
-import Chat from './pages/Chat';
+import ChatPage from './pages/ChatPage';
 import Index from './pages/Index';
-import Header from './pages/Header';
+import Header from './components/Header';
 import { useEffect, useState } from 'react';
 
 function App() {
@@ -24,7 +24,7 @@ function App() {
       
       <Routes>
         <Route path="/" element={<Index />} />
-        <Route path="/chat" element={<Chat />} />
+        <Route path="/chat" element={<ChatPage />} />
       </Routes>
     </div>
   );
