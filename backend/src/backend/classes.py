@@ -10,6 +10,9 @@ class User(BaseModel):
 class Message(BaseModel):
     text: str
     sender: User
+
+class Chat(BaseModel):
+    text: str
     
 # Contiene i dati relativi a una lobby
 class Lobby(BaseModel):

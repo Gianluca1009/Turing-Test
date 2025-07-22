@@ -1,9 +1,11 @@
 import uuid
 from fastapi import FastAPI
+import requests
 from fastapi.middleware.cors import CORSMiddleware
 import socketio  # type: ignore
 import logging
-from src.backend.classes import User, Message, Lobby
+import os
+from src.backend.classes import User, Message, Lobby, Chat
 
 logging.basicConfig(level=logging.INFO)
 
@@ -108,7 +110,31 @@ async def disconnect(sid: str, environ):
     else:
         # Error detection
         logging.warning(f"Utente {sid} ha cercato di uscire da una lobby senza essere in una lobby.")
-        
+
+# Elementi di gestione chat con modello AI
+OLLAMA_HOST = os.getenv("OLLAMA_HOST", "localhost")
+OLLAMA_URL = f"http://{OLLAMA_HOST}:11434/api/chat"
+MODEL_NAME = "phi:2.7b"
+
+@app.post("/chat")
+def chat_with_phi(data: Chat):
+    payload = {
+        "model": MODEL_NAME,
+        "messages": [
+            {"role": "system", "content": "Your goal is to emulate a real human"},
+            { "role": "user", "content": data.text }
+  ],
+        "stream": False
+    }
+
+    try:
+        response = requests.post(OLLAMA_URL, json=payload)
+        response.raise_for_status()
+        return {"response": response.json().get("message", {}).get("content", "")}
+        logging.info(f"Risposta del modello: {response}")
+    except requests.exceptions.RequestException as e:
+        return {"error": str(e)}
+
 
 # ASGI application combining FastAPI and Socket.IO
 app = socketio.ASGIApp(sio, other_asgi_app = app)

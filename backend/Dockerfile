@@ -2,7 +2,7 @@ FROM python:3.11
 
 WORKDIR /app
 
-RUN pip install fastapi uvicorn mariadb python-socketio
+RUN pip install fastapi uvicorn mariadb python-socketio openai requests
 
 COPY src /app/src
 
