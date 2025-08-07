@@ -11,8 +11,9 @@ class Message(BaseModel):
     text: str
     sender: User
 
-class Chat(BaseModel):
-    text: str
+class ChatRequest(BaseModel):
+    mode: str
+    user: User
     
 # Contiene i dati relativi a una lobby
 class Lobby(BaseModel):

@@ -22,8 +22,6 @@ services:
       - database
     environment:
       - OLLAMA_HOST=ollama
-    networks:
-      - appnet
 
   database:
     image: mariadb:10.5
@@ -42,21 +40,5 @@ services:
       timeout: 5s
       start_period: 20s
 
-  ollama:
-    image: ollama/ollama:latest
-    container_name: ollama
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama_models:/root/.ollama
-      - ./entrypoint.sh:/entrypoint.sh
-    networks:
-      - appnet
-    entrypoint: ["/bin/bash", "/entrypoint.sh"]
-
 volumes:
   mariadb_data:
-  ollama_models:
-
-networks:
-  appnet:

@@ -5,7 +5,9 @@ from fastapi.middleware.cors import CORSMiddleware
 import socketio  # type: ignore
 import logging
 import os
-from src.backend.classes import User, Message, Lobby, Chat
+import asyncio
+import google.generativeai as genai
+from src.backend.classes import User, Message, ChatRequest, Lobby
 
 logging.basicConfig(level=logging.INFO)
 
@@ -27,52 +29,90 @@ lobbies: list[Lobby] = []
 # Dizionario che mappa ogni User id (sid) all'oggetto Lobby di cui fa parte
 user_lobbies: dict[str, Lobby] = {}
 
+# Funzione di chat con modello AI
+genai.configure(api_key="AIzaSyAoEnKYCwvb0suKKIH_AtlTc0_arLbDXuU")
+model = genai.GenerativeModel("gemma-3-27b-it")
+
+def sync_generate(input: str):
+    response = model.generate_content(input)
+    return response.text
+
+"""Funzione che esegue sync_generate in un thread separato (modalità asincrona). Evita di aspettare la generazione della risposta del bot per poter visualizzare sull'interfaccia il messaggio inviato dall'utente"""
+async def chat_with_AI(input: str) -> str:
+    loop = asyncio.get_event_loop()
+    response = await loop.run_in_executor(None, sync_generate, input)
+    return response
+
+"""Gestisce la risposta del bot tramite la funzione asincrona"""
+async def handle_bot_response(user_message: str, lobby: Lobby):
+    BotResponse = await chat_with_AI(user_message)
+    message = Message(text=BotResponse, sender=lobby.user_2)
+    lobby.messages.append(message)
+    await sio.emit("chat_message", message.model_dump(), room=lobby.lobby_id)
+    logging.info(f"Lobby state: {lobby}") # Debugging
+
 @sio.event
 async def connect(sid: str, environ, auth):
     logging.info(f"Client connected: {sid}") # Debugging
 
 @sio.event
-async def find_chat(sid: str, user: User):
+async def find_chat(sid: str, request: ChatRequest):
     """Funzione utile a inserire un utente a una lobby, creandone una nuova se necessario"""
-    found = False
-    user = User(**user)  # Viene creato un oggetto User con i dati passati
+    request = ChatRequest(**request)
+    user = request.user  # Viene creato un oggetto User con i dati passati
 
-    for lobby in lobbies:
-        lobby_id = lobby.lobby_id
-        if lobby.user_2 is None:
-            # Se c'è solo un utente, completa la lobby con l'utente corrente
-            lobby.user_2 = user
-            user_lobbies[user.sid] = lobby
-            await sio.enter_room(user.sid, lobby_id)
-            await sio.enter_room(lobby.user_1.sid, lobby_id)
-            await sio.emit("chat_ready", {"lobby_id": lobby_id}, room = lobby_id)
-            found = True
-            break
-
-    if not found:
-        # Se non trova lobby con posti liberi, ne crea una nuova e inserisce l'utente corrente al suo interno
+    if request.mode == "bot":
+        ChatBot = User(username="gemma3", sid=str(uuid.uuid4()))
         lobby_id = str(uuid.uuid4())
-        lobby = Lobby(messages = [], lobby_id = lobby_id, user_1 = user, user_2 = None)
+        lobby = Lobby(messages=[], lobby_id=lobby_id, user_1=user, user_2=ChatBot)
         lobbies.append(lobby)
         user_lobbies[user.sid] = lobby
         await sio.enter_room(user.sid, lobby_id)
 
-    logging.info(f"Lobby state: {lobbies}") # Debugging
+    elif request.mode == "human":
+        found = False
+
+        for lobby in lobbies:
+            lobby_id = lobby.lobby_id
+            if lobby.user_2 is None:
+                # Se c'è solo un utente, completa la lobby con l'utente corrente
+                lobby.user_2 = user
+                user_lobbies[user.sid] = lobby
+                await sio.enter_room(user.sid, lobby_id)
+                await sio.enter_room(lobby.user_1.sid, lobby_id)
+                await sio.emit("chat_ready", {"lobby_id": lobby_id}, room = lobby_id)
+                found = True
+                break
+
+        if not found:
+            # Se non trova lobby con posti liberi, ne crea una nuova e inserisce l'utente corrente al suo interno
+            lobby_id = str(uuid.uuid4())
+            lobby = Lobby(messages = [], lobby_id = lobby_id, user_1 = user, user_2 = None)
+            lobbies.append(lobby)
+            user_lobbies[user.sid] = lobby
+            await sio.enter_room(user.sid, lobby_id)
+
+    logging.info(f"Lobby state: {lobby}") # Debugging
 
 @sio.event
-async def chat_message(sid: str, message: Message):
+async def chat_message(sid: str, message: Message, mode: str):
     """ Funzione utile a inviare un nuovo messaggio """
+    logging.info(f"Lobby Mode: {mode}") # Debugging
     message = Message(**message) # Viene creato un oggetto Message con i dati passati
     lobby = user_lobbies.get(message.sender.sid) # Viene recuperata la lobby dell'utente che ha inviato il messaggio
+
     if lobby:
         # Il messaggio viene aggiunto alla lista della Lobby e viene inviato al frontend tramite emit
         lobby.messages.append(message)
         await sio.emit("chat_message", message.model_dump(), room = lobby.lobby_id)
-        logging.info(f"Lobby state: {lobbies}") # Debugging
+        logging.info(f"Lobby state: {lobby}") # Debugging
 
     else:
         # Error detection
         logging.warning(f"Utente {sid} ha inviato un messaggio senza essere in una lobby.")
+
+    if mode == "bot":
+        asyncio.create_task(handle_bot_response(message.text, lobby))   #Esegue in maniera asincrona handle_bot_response (Non blocca l'esecuzione come farebbe await)
 
 @sio.event
 async def disconnect(sid: str, environ):
@@ -102,7 +142,7 @@ async def disconnect(sid: str, environ):
                 lobby.user_1 = None
         
         # Viene inviato all'altro utente l'evento 'chat_ended', in modo da farlo uscire dalla chat (NON FUNZIONANTE!!!)
-        await sio.emit("chat_ended", {"reason": "user_disconnected"}, room = lobby.lobby_id)
+        """ await sio.emit("chat_ended", {"reason": "user_disconnected"}, room = lobby.lobby_id) """
         
         lobbies.remove(lobby) # La lobby viene eliminata dalla lista delle lobby attive
         logging.info(f"Lobby state: {lobbies}") # Debugging
@@ -110,30 +150,7 @@ async def disconnect(sid: str, environ):
     else:
         # Error detection
         logging.warning(f"Utente {sid} ha cercato di uscire da una lobby senza essere in una lobby.")
-
-# Elementi di gestione chat con modello AI
-OLLAMA_HOST = os.getenv("OLLAMA_HOST", "localhost")
-OLLAMA_URL = f"http://{OLLAMA_HOST}:11434/api/chat"
-MODEL_NAME = "phi:2.7b"
-
-@app.post("/chat")
-def chat_with_phi(data: Chat):
-    payload = {
-        "model": MODEL_NAME,
-        "messages": [
-            {"role": "system", "content": "Your goal is to emulate a real human"},
-            { "role": "user", "content": data.text }
-  ],
-        "stream": False
-    }
-
-    try:
-        response = requests.post(OLLAMA_URL, json=payload)
-        response.raise_for_status()
-        return {"response": response.json().get("message", {}).get("content", "")}
-        logging.info(f"Risposta del modello: {response}")
-    except requests.exceptions.RequestException as e:
-        return {"error": str(e)}
+    
 
 
 # ASGI application combining FastAPI and Socket.IO
