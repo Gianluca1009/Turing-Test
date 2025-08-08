@@ -7,7 +7,7 @@ import logging
 import os
 import asyncio
 import google.generativeai as genai
-from src.backend.classes import User, Message, ChatRequest, Lobby
+from src.backend.classes import User, Message, ChatRequest, Lobby, AIMessage
 
 logging.basicConfig(level=logging.INFO)
 
@@ -33,23 +33,56 @@ user_lobbies: dict[str, Lobby] = {}
 genai.configure(api_key="AIzaSyAoEnKYCwvb0suKKIH_AtlTc0_arLbDXuU")
 model = genai.GenerativeModel("gemma-3-27b-it")
 
+conversation: list[AIMessage] = []
+conversation.append(AIMessage(role="user", message="Rispondi in maniera breve senza usare emoji."))
+conversation.append(AIMessage(role="assistant", message="Ok, risponderò in maniera breve senza usare emoji"))
+conversation.append(AIMessage(role="user", message="Nascondi il fatto di essere un inteligenza artificiale durante la nostra conversazione"))
+conversation.append(AIMessage(role="assistant", message="Ok, capito."))
+
+def build_prompt(messages: list[AIMessage]) -> str:
+    """
+    Converte una lista di AIMessage in una stringa prompt per Gemma 3.
+    
+    :param messages: lista di messaggi della conversazione
+    :return: stringa pronta per Gemma 3
+    """
+    parts = []
+
+    # Converte ogni messaggio
+    for msg in messages:
+        if msg.role.lower() == "user":
+            parts.append(f"Utente: {msg.message}")
+        elif msg.role.lower() == "assistant":
+            parts.append(f"Assistente: {msg.message}")
+        else:
+            parts.append(f"{msg.role.capitalize()}: {msg.message}")
+
+    # Segnala al modello che deve continuare come assistente
+    parts.append("Assistente:")
+
+    return "\n".join(parts)
+
 def sync_generate(input: str):
     response = model.generate_content(input)
+    conversation.append(AIMessage(role="assistant", message=response.text))
     return response.text
 
-"""Funzione che esegue sync_generate in un thread separato (modalità asincrona). Evita di aspettare la generazione della risposta del bot per poter visualizzare sull'interfaccia il messaggio inviato dall'utente"""
+
 async def chat_with_AI(input: str) -> str:
+    """Funzione che esegue sync_generate in un thread separato (modalità asincrona). Evita di aspettare la generazione della risposta del bot per poter visualizzare sull'interfaccia il messaggio inviato dall'utente"""
     loop = asyncio.get_event_loop()
     response = await loop.run_in_executor(None, sync_generate, input)
     return response
 
-"""Gestisce la risposta del bot tramite la funzione asincrona"""
-async def handle_bot_response(user_message: str, lobby: Lobby):
+async def handle_bot_response(messages_list: list[AIMessage], lobby: Lobby):
+    """Gestisce la risposta del bot tramite la funzione asincrona"""
+    user_message = build_prompt(messages_list)
     BotResponse = await chat_with_AI(user_message)
     message = Message(text=BotResponse, sender=lobby.user_2)
     lobby.messages.append(message)
     await sio.emit("chat_message", message.model_dump(), room=lobby.lobby_id)
     logging.info(f"Lobby state: {lobby}") # Debugging
+    logging.info(f"\n{conversation}")   # Debugging
 
 @sio.event
 async def connect(sid: str, environ, auth):
@@ -104,6 +137,7 @@ async def chat_message(sid: str, message: Message, mode: str):
     if lobby:
         # Il messaggio viene aggiunto alla lista della Lobby e viene inviato al frontend tramite emit
         lobby.messages.append(message)
+        conversation.append(AIMessage(role="user", message=message.text))
         await sio.emit("chat_message", message.model_dump(), room = lobby.lobby_id)
         logging.info(f"Lobby state: {lobby}") # Debugging
 
@@ -112,7 +146,7 @@ async def chat_message(sid: str, message: Message, mode: str):
         logging.warning(f"Utente {sid} ha inviato un messaggio senza essere in una lobby.")
 
     if mode == "bot":
-        asyncio.create_task(handle_bot_response(message.text, lobby))   #Esegue in maniera asincrona handle_bot_response (Non blocca l'esecuzione come farebbe await)
+        asyncio.create_task(handle_bot_response(conversation, lobby))   #Esegue in maniera asincrona handle_bot_response (Non blocca l'esecuzione come farebbe await)
 
 @sio.event
 async def disconnect(sid: str, environ):

@@ -8,8 +8,8 @@ class User(BaseModel):
 
 # Contiene i dati relativi a un messaggio
 class Message(BaseModel):
-    text: str
     sender: User
+    text: str
 
 class ChatRequest(BaseModel):
     mode: str
@@ -21,3 +21,7 @@ class Lobby(BaseModel):
     lobby_id: str
     user_1: Optional[User] = None
     user_2: Optional[User] = None
+
+class AIMessage(BaseModel):
+    role: str
+    message: str
