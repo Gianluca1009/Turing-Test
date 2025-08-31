@@ -2,7 +2,7 @@ import google.generativeai as genai
 import mysql.connector # type: ignore
 
 # Qui viene memorizzata la key in modo centralizzato
-api_key = "AIzaSyAxeEbu-oFCfBhvEQkRj0qk_YZOo1EnXnQ"
+api_key = ""
 
 # Configurazione di genai
 genai.configure(api_key = api_key)
