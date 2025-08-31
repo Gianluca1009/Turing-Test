@@ -2,7 +2,7 @@ FROM python:3.11
 
 WORKDIR /app
 
-RUN pip install fastapi uvicorn mariadb python-socketio requests google-generativeai
+RUN pip install fastapi uvicorn mariadb python-socketio requests google-generativeai mysql-connector-python
 
 COPY src /app/src
 

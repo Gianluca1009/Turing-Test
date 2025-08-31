@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-function Header({ toggleDarkMode, darkMode }) {
+function Header({ setOpenLogRegPopup, toggleDarkMode, darkMode }) {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const menuRef = useRef(null);
@@ -89,7 +89,7 @@ function Header({ toggleDarkMode, darkMode }) {
           <span role="img" aria-label="robot" className="text-4xl sm:text-6xl select-none">
             🤖
           </span>
-          ChatBot
+          BotOrNot
         </h1>
 
         {/* Menu orizzontale su schermi medi/grandi */}
@@ -108,6 +108,14 @@ function Header({ toggleDarkMode, darkMode }) {
           </button>
         </nav>
       </div>
+
+      {/* Bottone login */}
+      <button
+        onClick={() => setOpenLogRegPopup(true)}
+        className="px-4 py-2 bg-green-500 text-black font-semibold rounded-md hover:bg-green-400 transition"
+      >
+        Login
+      </button>
 
       {/* Dark mode toggle */}
       <div className="flex items-center gap-4 ml-4 shrink-0">

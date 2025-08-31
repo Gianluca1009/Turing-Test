@@ -13,11 +13,32 @@ function ChatPage() {
   // useState utile a gestire l'attesa dell'inizio di una chat
   const [waiting, setWaiting] = useState(false);
 
+  // useState utile a tracciare il valore di 'mode' (mode == 'bot' -> ai = true, mode == 'human' -> ai = false)
   const [ai, setAI] = useState(false);
+
+  // useState utile a memorizzare il sid dell'utente che deve inviare il primo messaggio
+  const  [starterSid, setStarterSid] = useState(null);
+
+  // useState utile a memorizzare i sids degli utenti (o dell'utente e del bot) che partecipano a una chat
+  const [lobbySids, setLobbySids] = useState({ user_1: null, user_2: null });
+
+  // useState utile a memorizzare il nome dell'eventuale modello utilizzato durante la chat
+  const [modelName, setModelName] = useState(null);
 
   // useRef utile a creare un contenitore che sopravvive ai render del componente Chat
   // Verrà utilizzato come riferimento per il socket
   const socketRef = useRef(null);
+
+  // Cleanup: quando ChatPage viene smontata disconnette il socket
+  useEffect(() => {
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+        console.log("Socket disconnesso perché ChatPage è stato smontato (cambio pagina)");
+      }
+    };
+  }, []);
 
   const handleStart = (mode) => {
     // Viene creato il socket e assegnato all'attributo current di socketRef (al click del bottone startChat)
@@ -26,7 +47,7 @@ function ChatPage() {
 
     let payload = {
       mode: mode,
-      user: { username: "user", sid: null }, // sid lo metti dopo il connect
+      user: { username: "user", sid: null}, // sid lo metti dopo il connect
     };
 
     // Gestione dell'evento 'connect' con relativa chiamata alla funzione del backend
@@ -39,8 +60,8 @@ function ChatPage() {
         setWaiting(true);
       }
 
-      // Chiamata alla funzione 'find_chat' del backend
-      socket.emit("find_chat", payload);
+      // Chiamata alla funzione 'join_lobby' del backend
+      socket.emit("join_lobby", payload);
     });
 
     // Quando il backend risponde che la chat è pronta
@@ -48,38 +69,63 @@ function ChatPage() {
       console.log("Chat pronta con lobby:", data.lobby_id);
       setWaiting(false);
       setStarted(true);
+      
+      // starterSid contiene il sid dell'utente che deve iniziare la conversazione
+      if (data.user_1_starts === true) {
+        setStarterSid(data.user_1_sid) 
+      } else {
+        setStarterSid(data.user_2_sid)
+      }
+
+      // vengono salvati in lobbySids i sid di tutti e due gli utenti
+      setLobbySids({
+        user_1: data.user_1_sid,
+        user_2: data.user_2_sid,
+      });
+
+      setModelName(data.model_name)
+
     });
 
-    // Gestione dell'evento 'disconnect' con relativa chiamata alla funzione del backend
-    // INUTILE ???? DA CONTROLLARE
-    socket.on("disconnect", () => {
-      console.log("Cliente disconnesso. ID:", socket.id);
-      setStarted(false);
-    });
-
-    // EVENTO UTILE A USCIRE DALLA CHAT QUANDO L'ALTRO UTENTE ESCE DALLA LOBBY (NON FUNZIONANTE!!!)
-    socket.on("chat_ended", (data) => {
-      console.log("Chat terminata:", data.reason);
-      setStarted(false);
-      setWaiting(false);
-    });
   };
+
+  // Funzione utile a disconnettere l'utente nel caso l'altro esca dalla chat (utilizzata in ChatBox.jsx)
+  const onChatEnded = () => {
+    setStarted(false);
+    setWaiting(false);
+    setAI(false);
+    setStarterSid(null)
+    setLobbySids({ user1: null, user2: null });
+    setModelName(null);
+
+    if (socketRef.current) {
+      socketRef.current.disconnect();
+      socketRef.current = null;
+    }
+  }
 
   return (
     <>
-      {ai ? (
-        <ChatBox socket={socketRef.current} mode={"bot"} />
-      ) : !started ? (
-        !waiting ? (
-          <StartChat handleStart={handleStart} />
-        ) : (
-          <WaitingForChat />
-        )
-      ) : (
-        <ChatBox socket={socketRef.current} mode={"human"} />
-      )}
+      {((ai || started) && starterSid) ? (
+          <ChatBox
+            socket = { socketRef.current }
+            mode = { ai ? "bot" : "human" }
+            onChatEnded = { onChatEnded }
+            starterSid = { starterSid }
+            lobbySids = { lobbySids }
+            started = { started }
+            modelName = { modelName }
+          />
+        ) : !started ? (
+          !waiting ? (
+            <StartChat handleStart = { handleStart } />
+          ) : (
+            <WaitingForChat />
+          )
+        ) : null}
     </>
   );
 }
+
 
 export default ChatPage;

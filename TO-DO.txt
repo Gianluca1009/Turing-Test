@@ -1,0 +1,45 @@
+Lista di cose da fare:
+
+1. Fare in modo che quando viene ricaricata la pagina durante una conversazione, questa venga mantenuta ❓
+!!! FORSE E' FACILE FARLO UNA VOLTA IMPLEMENTATO IL LOGIN, QUANDO OGNI UTENTE AVRA' UN ID UNIVOCO
+
+2. Fare in modo che l'AI possa iniziare la conversazione ✅
+
+3. Implementare più modelli ✅
+
+4. Vietare l'invio di più di un messaggio per volta ✅
+
+5. Implementare un timer ✅
+
+6. Login - Logout - Registrazione
+
+7. Sistema a punti
+
+8. Classifica Modelli con pagina dedicata
+
+9. Possibilità di inserire un feedback post chat con un modello (frontend fatto)
+
+10. Pagina About
+
+11. Bottone generico per l'inizio della chat, che sceglie randomicamente un altro utente o un LLM con cui chattare
+
+12. Fare in modo che se un utente lascia la lobby, la lascia anche l'altro ✅
+
+13. Far leggere al modello i consigli degli utenti prima di iniziare la chat
+
+14. Decidere quali tabelle sono necessarie per il database (memorizzazione chat - messsaggi ???)
+
+15. Trovare un modo per ritardare le risposte dell'AI per farle sembrare umane
+
+16. Sistemare i messaggi di fine partita
+
+17. Exceptions?
+
+18. soft disconnection quando la partita finisce
+
+
+ISTRUZIONI PER ACCEDERE AL DB DA UBUNTU
+
+1. docker exec -it database mysql -u user -p
+
+2. USE bot_or_not_db;

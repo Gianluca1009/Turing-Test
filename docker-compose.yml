@@ -19,9 +19,8 @@ services:
     ports:
       - "8003:8003"
     depends_on:
-      - database
-    environment:
-      - OLLAMA_HOST=ollama
+      database:
+        condition: service_healthy
 
   database:
     image: mariadb:10.5
