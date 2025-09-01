@@ -1,5 +1,5 @@
 -- Creazione del database (opzionale, se non già fatto)
--- DROP DATABASE IF EXISTS cinema_db;
+-- DROP DATABASE IF EXISTS bot_or_not_db;
 CREATE DATABASE IF NOT EXISTS bot_or_not_db;
 USE bot_or_not_db;
 
@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS messaggi (
 );
 
 -- Elimina e crea nuovamente l'utente 'user', che ha tutti i privilegi sul db
--- DROP USER IF EXISTS 'user'@'%';
+DROP USER IF EXISTS 'user'@'%';
 CREATE USER 'myuser'@'%' IDENTIFIED BY 'pwd';
 GRANT ALL PRIVILEGES ON bot_or_not_db.* TO 'myuser'@'%';
 FLUSH PRIVILEGES;

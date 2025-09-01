@@ -47,7 +47,7 @@ function LogRegPopup({ setShowLogRegPopup, setShowOkLoginPopup, setShowOkRegPopu
                 : "text-gray-400 hover:text-green-400"
             }`}
           >
-            Login
+            Accedi
           </button>
           <button
             onClick={() => setActiveTab("register")}

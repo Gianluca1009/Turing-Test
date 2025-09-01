@@ -42,3 +42,8 @@ class RegistrationData(BaseModel):
     username: str 
     email: str
     password: str
+    
+ # Contiene i dati relativi alla registrazione di un nuovo utente
+class LoginData(BaseModel):
+    email: str
+    password: str

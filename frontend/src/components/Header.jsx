@@ -1,7 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import AccountIcon from '../SVGs/AccountIcon';
 
 function Header({ setOpenLogRegPopup, toggleDarkMode, darkMode }) {
+
+  // Recuperiamo i dati dell'utente attivo dal contesto (null se il login non è stato effettuato)
+  const { user } = useAuth();
+
+  // useState per gestire lo stato di apertura del menù laterale (mobile)
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const menuRef = useRef(null);
@@ -16,10 +23,12 @@ function Header({ setOpenLogRegPopup, toggleDarkMode, darkMode }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Funzione utile a cambiare path (chiude il menù laterale da mobile)
   const handleNavigate = (path) => {
     setOpen(false);
     navigate(path);
   };
+
 
   return (
     <header className="w-full bg-gray-300 dark:bg-black bg-opacity-90 border-b border-green-900 py-4 px-4 sm:px-8 flex items-center justify-between select-none relative transition-colors duration-300 flex-wrap">
@@ -106,16 +115,26 @@ function Header({ setOpenLogRegPopup, toggleDarkMode, darkMode }) {
           <button onClick={() => handleNavigate('/about')} className="hover:text-green-400 transition">
             About
           </button>
+
+          {/* Bottone login / account */}
+          {!user ? (
+            <button
+              onClick={() => setOpenLogRegPopup(true)}
+              className="p-3 hover:text-green-400 transition"
+            >
+              Accedi
+            </button>
+          ) : (
+            <button
+              onClick={() => handleNavigate('/account')}
+              className="hover:text-green-400 transition"
+            >
+              <AccountIcon />
+            </button>
+          )}
         </nav>
       </div>
-
-      {/* Bottone login */}
-      <button
-        onClick={() => setOpenLogRegPopup(true)}
-        className="px-4 py-2 bg-green-500 text-black font-semibold rounded-md hover:bg-green-400 transition"
-      >
-        Login
-      </button>
+      
 
       {/* Dark mode toggle */}
       <div className="flex items-center gap-4 ml-4 shrink-0">

@@ -43,3 +43,11 @@ ISTRUZIONI PER ACCEDERE AL DB DA UBUNTU
 1. docker exec -it database mysql -u user -p
 
 2. USE bot_or_not_db;
+
+REGOLA PRATICA
+
+down -v → reset totale (DB incluso).
+
+down semplice → backend/frontend si fermano, il DB resta intatto.
+
+up --build → ricompila immagini di frontend/backend, ma non tocca il volume DB.

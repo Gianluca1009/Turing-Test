@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import LogRegPopup from './components/account/LogRegPopup';
 import OkRegPopup from './components/account/OkRegPopup';
 import OkLoginPopup from './components/account/OkLoginPopup';
+import AccountPage from './pages/AccountPage';
 
 function App() {
 
@@ -62,6 +63,7 @@ function App() {
       <Routes>
         <Route path = "/" element = { <Index /> } />
         <Route path = "/chat" element = { <ChatPage /> } />
+        <Route path = "/account" element = { <AccountPage /> } />
         {/* <Route path = "/classifica" element = { <LogRegPopup /> } /> */}
       </Routes>
     </div>

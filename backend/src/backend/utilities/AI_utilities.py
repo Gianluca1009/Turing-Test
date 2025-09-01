@@ -53,3 +53,18 @@ async def generate_AI_response_async(input: str, lobby: Lobby) -> str:
     
     # Ritorna la risposta del modello
     return response
+
+
+async def get_bot_response(lobby: Lobby) -> Message:
+    """Genera il messaggio di risposta del bot, senza inviarlo via socket"""
+    
+    # Viene creata la stringa che contiene tutta la conversazione
+    conversation_string = build_prompt_for_model(lobby.conversation)
+    
+    # Viene generata la risposta del bot e creato un oggetto messaggio che la contiene
+    bot_response = await generate_AI_response_async(conversation_string, lobby)
+    message = Message(sender=lobby.llm, role="assistant", text=bot_response)
+    
+    # Il nuovo messaggio viene aggiunto ai messaggi della chat e ritornato dalla funzione
+    lobby.conversation.append(message)
+    return message
