@@ -74,6 +74,7 @@ def create_bot_lobby(user: User, bot_starts) -> Lobby:
 
 def create_human_lobby(user: User) -> Lobby:
     """ Funzione utile a creare una chat in cui due utenti potranno chattare tra loro """
+    
     lobby_id = str(uuid.uuid4())
     lobby = Lobby(conversation = [], lobby_id = lobby_id, user_1 = user, user_2 = None,
                 llm = None, chat_with_AI = False)
@@ -82,3 +83,44 @@ def create_human_lobby(user: User) -> Lobby:
     
     return lobby
 
+
+def soft_disconnection(sid: str, lobby: Lobby):
+    """ Funzione utile a gestire l'uscita dalla lobby di un singolo utente, quando la chat termina """
+    
+    
+    if lobby.user_1 and lobby.user_1.sid == sid: 
+        lobby.user_1 = None
+        
+        # Se user_2 è già uscito, rimuoviamo la lobby dalla lista
+        if not lobby.user_2:
+            lobbies.remove(lobby)
+            
+    if lobby.user_2 and lobby.user_2.sid == sid: 
+        lobby.user_2 = None
+        
+        # Se user_1 è già uscito, rimuoviamo la lobby dalla lista
+        if not lobby.user_1:
+            lobbies.remove(lobby)
+
+
+def forced_disconnection(sid: str, lobby: Lobby):
+    """ Funzione utile a gestire l'uscita forzata dalla lobby, quando uno dei due utenti esce prima della fine """
+    
+    # Se lo user che ha lasciato la lobby è user_1
+    if lobby.user_1 and lobby.user_1.sid == sid: 
+        lobby.user_1 = None
+        
+        # Anche user_2 deve lasciare la lobby se non l'ha già fatto
+        if lobby.user_2 is not None:
+            lobby.user_2 = None
+            lobbies.remove(lobby) 
+        
+    # Se lo user che ha lasciato la lobby è user_2
+    elif lobby.user_2 and lobby.user_2.sid == sid:
+        lobby.user_2 = None
+        
+        # Anche user_1 deve lasciare la lobby se non l'ha già fatto
+        if lobby.user_1 is not None:
+            lobby.user_1 = None
+            lobbies.remove(lobby)
+    

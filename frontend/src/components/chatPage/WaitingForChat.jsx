@@ -1,6 +1,6 @@
 // WaitingForChat.jsx contiene la rotella di loading visualizzata durante l'attesa della chat
 
-function WaitingForChat({ handleStart }) {
+function WaitingForChat() {
 
   return (
 

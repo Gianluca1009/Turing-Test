@@ -35,7 +35,6 @@ function ChatPage() {
       if (socketRef.current) {
         socketRef.current.disconnect();
         socketRef.current = null;
-        console.log("Socket disconnesso perché ChatPage è stato smontato (cambio pagina)");
       }
     };
   }, []);
@@ -52,6 +51,14 @@ function ChatPage() {
 
     // Gestione dell'evento 'connect' con relativa chiamata alla funzione del backend
     socket.on("connect", () => {
+
+      // Controllo per evitare che venga chiamato join_lobby con 'user_1.sid' = null
+      if (!socket.id) {
+        console.error("Socket ID non disponibile, impossibile entrare in lobby");
+        return;
+      }
+
+      // Viene completato il payload
       payload.user.sid = socket.id;
 
       if (mode === "bot") {
@@ -89,19 +96,33 @@ function ChatPage() {
 
   };
 
-  // Funzione utile a disconnettere l'utente nel caso l'altro esca dalla chat (utilizzata in ChatBox.jsx)
-  const onChatEnded = () => {
+  // Funzione utile a resettare i valori degli useState quando termina la chat
+  const resetValues = () => {
     setStarted(false);
     setWaiting(false);
     setAI(false);
     setStarterSid(null)
-    setLobbySids({ user1: null, user2: null });
+    setLobbySids({ user_1: null, user_2: null });
     setModelName(null);
+  }
 
-    if (socketRef.current) {
-      socketRef.current.disconnect();
-      socketRef.current = null;
-    }
+  // Funzione utile a disconnettere l'utente nel caso l'altro esca dalla chat 
+  const onUserDisconnection = () => {
+
+    resetValues();
+
+    // disconnessione forzata nel backend
+    socketRef.current.emit("user_left_lobby");
+
+  }
+
+  // FUnzione utile a disconnettere l'utente quando la chat termina correttamente, dopo i popup finali
+  const onTimeExpired = () => {
+
+    resetValues();
+
+    // disconnessione soft nel backend
+    socketRef.current.emit("time_expired");
   }
 
   return (
@@ -110,7 +131,8 @@ function ChatPage() {
           <ChatBox
             socket = { socketRef.current }
             mode = { ai ? "bot" : "human" }
-            onChatEnded = { onChatEnded }
+            onUserDisconnection = { onUserDisconnection }
+            onTimeExpired = { onTimeExpired }
             starterSid = { starterSid }
             lobbySids = { lobbySids }
             started = { started }

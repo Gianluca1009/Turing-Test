@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from src.backend.classes import Message, ChatRequest, Lobby
-from src.backend.utilities.lobby_utilities import create_bot_lobby, create_human_lobby, user_lobbies, lobbies
+from src.backend.utilities.lobby_utilities import create_bot_lobby, create_human_lobby, soft_disconnection, forced_disconnection, user_lobbies, lobbies
 from src.backend.utilities.AI_utilities import get_bot_response
 
 
@@ -9,7 +9,7 @@ async def handle_bot_response(lobby: Lobby, sio) -> None:
     """Gestisce la risposta del bot e la invia al frontend"""
     
     message = await get_bot_response(lobby)
-    await sio.emit("handle_chat_message", message.model_dump(), room=lobby.lobby_id)
+    await sio.emit("receive_chat_message", message.model_dump(), room=lobby.lobby_id)
 
     logging.info(f"Lobby state: {lobby}")
     logging.info(f"\n{lobby.conversation}")
@@ -27,6 +27,7 @@ def register_socket_handlers(sio):
     @sio.event
     async def join_lobby(sid: str, request: ChatRequest):
         """Funzione che inserisce un utente in una lobby, creandone una nuova se necessario"""
+        
         request = ChatRequest(**request)
         user = request.user  # Viene creato un oggetto User con i dati passati
 
@@ -103,7 +104,7 @@ def register_socket_handlers(sio):
     
 
     @sio.event
-    async def handle_chat_message(sid: str, message: Message, mode: str):
+    async def send_chat_message(sid: str, message: Message, mode: str):
         """ Funzione utile a inviare un nuovo messaggio """
         
         logging.info(f"Lobby Mode: {mode}") # Debugging
@@ -118,7 +119,7 @@ def register_socket_handlers(sio):
             # Il messaggio viene aggiunto alla conversazione della lobby e viene inviato al frontend tramite emit
             lobby.conversation.append(message)
             
-            await sio.emit("handle_chat_message", message.model_dump(), room = lobby.lobby_id)
+            await sio.emit("receive_chat_message", message.model_dump(), room = lobby.lobby_id)
             logging.info(f"Lobby state: {lobby}") # Debugging
 
         else:
@@ -130,45 +131,69 @@ def register_socket_handlers(sio):
 
 
     @sio.event
-    async def disconnect(sid: str, environ):
+    async def disconnect(sid: str) -> None:
+        """ Gestione dell'evento base disconnect di socket.io """
+        await handle_disconnection(sid, time_expired = False)
+
+
+    @sio.event
+    async def user_left_lobby(sid: str) -> None:
+        """ Gestione dell'evento lanciato quando uno dei due utenti lascia la lobby """
+        await handle_disconnection(sid, time_expired = False)
+        await sio.disconnect(sid)
+
+
+    @sio.event
+    async def time_expired(sid: str, data = None) -> None:
+        """ Gestione dell'evento lanciato quando la chat termina correttamente """
+        await handle_disconnection(sid, time_expired = True)
+        await sio.disconnect(sid)
+        
+    
+    @sio.event
+    async def handle_disconnection(sid: str, time_expired: bool):
         """ Funzione utile a gestire la disconnessione dei due utenti dalla lobby di cui fanno parte """
         
         logging.info(f"Client disconnected: {sid}") # Debugging
-        lobby = user_lobbies.pop(sid, None) # Viene eliminata la corrispondenza sid - lobby in user_lobbies
         
-        if lobby:
+        # Viene eliminata la corrispondenza sid - lobby in user_lobbies
+        lobby = user_lobbies.pop(sid, None) 
+        
+        # Se lobby == null, o l'utente si è già disconnesso o la lobby è già stata eliminata (non serve fare altro)
+        if not lobby:
+             # Error detection
+            logging.warning(f"{sid} già disconnesso o lobby già eliminata.")
+            return
+    
+        # Troviamo il valore del sid dell'altro utente
+        other_sid = None
+        if lobby.user_1 and lobby.user_1.sid == sid and lobby.user_2:
+            other_sid = lobby.user_2.sid
+        elif lobby.user_2 and lobby.user_2.sid == sid and lobby.user_1:
+            other_sid = lobby.user_1.sid
             
+        # L'utente corrente lascia la lobby
+        await sio.leave_room(sid, lobby.lobby_id)
+        
+        if time_expired:
+            # Viene inviato all'altro utente l'evento 'chat_ended'
+            await sio.emit("chat_ended", {"reason": "time_expired"}, room = lobby.lobby_id)
+            
+            soft_disconnection(sid, lobby)
+        
+        else:
             # Viene inviato all'altro utente l'evento 'chat_ended', in modo da farlo uscire dalla chat
-            await sio.emit("chat_ended", {"reason": "The other user left the chat"}, room = lobby.lobby_id)
+            await sio.emit("chat_ended", {"reason": "disconnection"}, room = lobby.lobby_id)
             
-            # L'utente corrente lascia la lobby
-            await sio.leave_room(sid, lobby.lobby_id) 
-            
-            # Se lo user che ha lasciato la lobby è user_1
-            if lobby.user_1 and lobby.user_1.sid == sid: 
-                lobby.user_1 = None
+            if other_sid:
+                #  Anche l'altro utente deve lasciare la lobby, se è ancora al suo interno
+                await sio.leave_room(other_sid, lobby.lobby_id)
                 
-                # Anche user_2 deve lasciare la lobby se non l'ha già fatto
-                if lobby.user_2 is not None:
-                    user_2_sid = lobby.user_2.sid
-                    await sio.leave_room(user_2_sid, lobby.lobby_id)
-                    lobby.user_2 = None
-                    lobbies.remove(lobby) 
-                
-            # Se lo user che ha lasciato la lobby è user_2
-            elif lobby.user_2 and lobby.user_2.sid == sid:
-                lobby.user_2 = None
-                
-                # Anche user_1 deve lasciare la lobby se non l'ha già fatto
-                if lobby.user_1 is not None:
-                    user_1_sid = lobby.user_1.sid
-                    await sio.leave_room(user_1_sid, lobby.lobby_id)
-                    lobby.user_1 = None
-                    lobbies.remove(lobby) 
-            
+                # Eliminiamo la corrispondenza user - lobby anche per l'altro utente
+                user_lobbies.pop(other_sid, None)
+                    
+            forced_disconnection(sid, lobby)
                 
             logging.info(f"Lobby state: {lobbies}") # Debugging
 
-        else:
-            # Error detection
-            logging.warning(f"Utente {sid} ha cercato di uscire da una lobby senza essere in una lobby.")
+           

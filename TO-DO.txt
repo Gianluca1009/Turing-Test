@@ -51,3 +51,19 @@ down -v → reset totale (DB incluso).
 down semplice → backend/frontend si fermano, il DB resta intatto.
 
 up --build → ricompila immagini di frontend/backend, ma non tocca il volume DB.
+
+
+
+backend   | ERROR:asyncio:Task exception was never retrieved
+backend   | future: <Task finished name='Task-288' coro=<AsyncServer._handle_event_internal() done, defined at /usr/local/lib/python3.11/site-packages/socketio/async_server.py:610> exception=AttributeError("'NoneType' object has no attribute 'sid'")>
+backend   | Traceback (most recent call last):
+backend   |   File "/usr/local/lib/python3.11/site-packages/socketio/async_server.py", line 612, in _handle_event_internal
+backend   |     r = await server._trigger_event(data[0], namespace, sid, *data[1:])
+backend   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^                                                        
+backend   |   File "/usr/local/lib/python3.11/site-packages/socketio/async_server.py", line 640, in _trigger_event                         
+backend   |     ret = await handler(*args)
+backend   |           ^^^^^^^^^^^^^^^^^^^^                                                                                                 
+backend   |   File "/app/src/backend/sockets.py", line 79, in join_lobby
+backend   |     "user_1_sid": lobby.user_1.sid,                                                                                            
+backend   |                  ^^^^^^^^^^^^^^^^
+backend   | AttributeError: 'NoneType' object has no attribute 'sid'

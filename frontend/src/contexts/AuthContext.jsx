@@ -23,7 +23,7 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider value={{ user, login, logout }}>
-      {children} {/* dentro c'è l'applicazione (App.jsx*/}
+      {children} {/* dentro c'è l'applicazione (App.jsx)*/}
     </AuthContext.Provider>
   );
 }

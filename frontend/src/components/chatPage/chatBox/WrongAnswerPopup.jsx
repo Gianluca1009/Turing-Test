@@ -1,7 +1,7 @@
 // WrongAnswerPopup.jsx contiene il popup che compare quando non si indovina con chi si stava parlando
 import OpponentInfo from "./OpponentInfo";
 
-function WrongAnswerPopup({ mode, modelName, setShowWrongPopup, onChatEnded }) {
+function WrongAnswerPopup({ mode, modelName, setShowWrongPopup, onTimeExpired, sid }) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -22,7 +22,7 @@ function WrongAnswerPopup({ mode, modelName, setShowWrongPopup, onChatEnded }) {
               className="mt-4 bg-gray-200 dark:bg-gray-900 text-black dark:text-white px-4 py-2 rounded-lg"
               onClick={() => {
                 setShowWrongPopup(false);
-                onChatEnded();
+                onTimeExpired(sid);
               }}
             >
               Ok
@@ -46,7 +46,7 @@ function WrongAnswerPopup({ mode, modelName, setShowWrongPopup, onChatEnded }) {
               className="mt-4 bg-gray-200 dark:bg-gray-900 text-black dark:text-white px-4 py-2 rounded-lg"
               onClick={() => {
                 setShowWrongPopup(false);
-                onChatEnded();
+                onTimeExpired(sid);
               }}
             >
               Ok

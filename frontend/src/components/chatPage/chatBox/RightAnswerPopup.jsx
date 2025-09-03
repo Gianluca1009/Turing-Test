@@ -3,7 +3,7 @@
 import { useState } from "react";
 import OpponentInfo from "./OpponentInfo";
 
-function RightAnswerPopup({ mode, modelName, setShowRightPopup, onChatEnded }) {
+function RightAnswerPopup({ mode, modelName, setShowRightPopup, onTimeExpired, sid }) {
   const [feedback, setFeedback] = useState("");
 
   return (
@@ -27,7 +27,7 @@ function RightAnswerPopup({ mode, modelName, setShowRightPopup, onChatEnded }) {
               className="mt-4 bg-gray-200 dark:bg-gray-900 text-black dark:text-white px-4 py-2 rounded-lg"
               onClick={() => {
                 setShowRightPopup(false);
-                onChatEnded();
+                onTimeExpired(sid);
               }}
             >
               Ok
@@ -61,7 +61,7 @@ function RightAnswerPopup({ mode, modelName, setShowRightPopup, onChatEnded }) {
               className="mt-4 bg-gray-200 dark:bg-gray-900 text-black dark:text-white px-4 py-2 rounded-lg"
               onClick={() => {
                 setShowRightPopup(false);
-                onChatEnded();
+                onTimeExpired(sid);
               }}
             >
               Ok

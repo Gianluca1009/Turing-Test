@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS messaggi (
     id_messaggio INT AUTO_INCREMENT PRIMARY KEY,
     id_chat INT NOT NULL,
     id_utente INT,  -- NULL se scritto da IA
-    id_modello INT,     -- NULL se scritto da umano
+    id_modello INT, -- NULL se scritto da umano
     messaggio TEXT NOT NULL,
     send_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
