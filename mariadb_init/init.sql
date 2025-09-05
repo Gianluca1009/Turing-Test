@@ -1,5 +1,4 @@
 -- Creazione del database (opzionale, se non già fatto)
--- DROP DATABASE IF EXISTS bot_or_not_db;
 CREATE DATABASE IF NOT EXISTS bot_or_not_db;
 USE bot_or_not_db;
 
@@ -56,6 +55,13 @@ CREATE TABLE IF NOT EXISTS messaggi (
     FOREIGN KEY (id_utente) REFERENCES utenti(id_utente),
     FOREIGN KEY (id_modello) REFERENCES modelli(id_modello)
 );
+
+-- Inseriamo i modelli all'interno dell'omonima tabella 
+INSERT INTO modelli (nome, vittorie, sconfitte) VALUES
+('Gemma-3-27b-it', 120, 45),
+('Gemma-3-12b-it', 95, 60),
+('Gemini-2.5-flash', 80, 70),
+('Gemini-2.5-flash-lite', 110, 55);
 
 -- Elimina e crea nuovamente l'utente 'user', che ha tutti i privilegi sul db
 DROP USER IF EXISTS 'user'@'%';

@@ -10,7 +10,7 @@ from src.backend.classes import  Message, ChatRequest, Lobby, RegistrationData, 
 from src.backend.utilities.lobby_utilities import *
 from src.backend.utilities.AI_utilities import *
 from src.backend.sockets import register_socket_handlers
-from src.backend.config import conn
+from src.backend.config import get_connection
 
 logging.basicConfig(level=logging.INFO)
 
@@ -40,53 +40,116 @@ def register(new_user_data: RegistrationData):
     email = new_user_data.email
     password = new_user_data.password
     
-    cursor = conn.cursor()
-
-    # Controllo duplicati (username)
-    cursor.execute("SELECT * FROM utenti WHERE username=%s", (username,))
-    if cursor.fetchone():
-        raise HTTPException(status_code=400, detail="Esiste già un account con questo username!")
+    conn = get_connection()
     
-    # Controllo duplicati (email)
-    cursor.execute("SELECT * FROM utenti WHERE email=%s", (email,))
-    if cursor.fetchone():
-        raise HTTPException(status_code=400, detail="Esiste già un account con questa email!")
+    try:
+        cursor = conn.cursor()
 
-    # Inserimento nuovo utente (0 trofei, vittorie e sconfitte iniziali)
-    cursor.execute("""
-        INSERT INTO utenti (username, email, pwd, trofei, vittorie, sconfitte)
-        VALUES (%s, %s, %s, %s, %s, %s)
-    """, (username, email, password, 0, 0, 0))
-    conn.commit()
+        # Controllo duplicati (username)
+        cursor.execute("SELECT * FROM utenti WHERE username=%s", (username,))
+        if cursor.fetchone():
+            raise HTTPException(status_code=400, detail="Esiste già un account con questo username!")
+        
+        # Controllo duplicati (email)
+        cursor.execute("SELECT * FROM utenti WHERE email=%s", (email,))
+        if cursor.fetchone():
+            raise HTTPException(status_code=400, detail="Esiste già un account con questa email!")
 
-    return {"message": "Registrazione completata con successo"}
+        # Inserimento nuovo utente (0 trofei, vittorie e sconfitte iniziali)
+        cursor.execute("""
+            INSERT INTO utenti (username, email, pwd, trofei, vittorie, sconfitte)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (username, email, password, 0, 0, 0))
+        conn.commit()
+        
+        return {"message": "Registrazione completata con successo"}
+    
+    finally:
+        cursor.close()
+        conn.close() 
+    
+    
 
 @fastapi_app.post("/login")
 def login(user_data: LoginData):
     email = user_data.email
     password = user_data.password
 
-    cursor = conn.cursor(dictionary=True)
+    conn = get_connection()
+    
+    try:
+        cursor = conn.cursor(dictionary=True)
 
-    # Cerca l'utente per email
-    cursor.execute("SELECT * FROM utenti WHERE email=%s", (email,))
-    user = cursor.fetchone()
+        # Cerca l'utente per email
+        cursor.execute("SELECT * FROM utenti WHERE email=%s", (email,))
+        user = cursor.fetchone()
 
-    if not user:
-        raise HTTPException(status_code=401, detail="Non esiste un account associato a questa email!")
+        if not user:
+            raise HTTPException(status_code=401, detail="Non esiste un account associato a questa email!")
 
-    # Verifica password 
-    if user["pwd"] != password:
-        raise HTTPException(status_code=401, detail="Password errata, riprovare")
+        # Verifica password 
+        if user["pwd"] != password:
+            raise HTTPException(status_code=401, detail="Password errata, riprovare")
+        
+        return {
+            "message": "Login effettuato con successo",
+            "id_utente": user["id_utente"],
+            "username": user["username"],
+            "email": user["email"],
+            "trofei": user["trofei"],
+            "vittorie": user["vittorie"],
+            "sconfitte": user["sconfitte"]
+        }
+    
+    finally:
+        cursor.close()
+        conn.close()
 
-    return {
-        "message": "Login effettuato con successo",
-        "id_utente": user["id_utente"],
-        "username": user["username"],
-        "email": user["email"],
-        "trofei": user["trofei"],
-        "vittorie": user["vittorie"],
-        "sconfitte": user["sconfitte"]
-    }
+    
+    
+    
+@fastapi_app.get("/get_classifica_utenti")
+def get_classifica_utenti():
 
+    conn = get_connection()
+    
+    try:
+        cursor = conn.cursor(dictionary=True)
+
+        # Cerca l'utente per email
+        cursor.execute("SELECT id_utente, username, trofei FROM utenti ORDER BY trofei DESC")
+        classifica_utenti = cursor.fetchall()
+
+        if not classifica_utenti:
+            raise HTTPException(status_code=404, detail="Nessun utente trovato")
+        
+        return classifica_utenti
+    
+    finally:
+        cursor.close()
+        conn.close()
+
+
+@fastapi_app.get("/get_classifica_modelli")
+def get_classifica_modelli():
+
+    conn = get_connection()
+    
+    try:
+        cursor = conn.cursor(dictionary=True)
+
+        # Cerca l'utente per email
+        cursor.execute("SELECT id_modello, nome, vittorie, sconfitte FROM modelli") 
+        classifica_modelli = cursor.fetchall()
+
+        if not classifica_modelli:
+            raise HTTPException(status_code=404, detail="Nessun utente trovato")
+        
+        return classifica_modelli
+    
+    finally:
+        cursor.close()
+        conn.close()
+
+    
 
