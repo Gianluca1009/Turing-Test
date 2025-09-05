@@ -1,12 +1,8 @@
-import random
-import uuid
 from fastapi import FastAPI, HTTPException
-import requests
 from fastapi.middleware.cors import CORSMiddleware
 import socketio  # type: ignore
 import logging
-import asyncio
-from src.backend.classes import  Message, ChatRequest, Lobby, RegistrationData, LoginData
+from src.backend.classes import RegistrationData, LoginData
 from src.backend.utilities.lobby_utilities import *
 from src.backend.utilities.AI_utilities import *
 from src.backend.sockets import register_socket_handlers

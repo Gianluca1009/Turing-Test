@@ -64,7 +64,7 @@ INSERT INTO models (name, victories, defeats) VALUES
 ('Gemini-2.5-flash-lite', 110, 55);
 
 -- Elimina e crea nuovamente l'utente 'user', che ha tutti i privilegi sul db
-DROP USER IF EXISTS 'user'@'%';
+DROP USER IF EXISTS 'myuser'@'%';
 CREATE USER 'myuser'@'%' IDENTIFIED BY 'pwd';
 GRANT ALL PRIVILEGES ON bot_or_not_db.* TO 'myuser'@'%';
 FLUSH PRIVILEGES;

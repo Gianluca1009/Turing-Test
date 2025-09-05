@@ -234,7 +234,7 @@ function ChatBox({ socket, mode, onUserDisconnection, onTimeExpired, starterSid,
         <ChoicePopup handleChoicePopupResponse = { handleChoicePopupResponse }/>
       )}
 
-      {/* Popup CORRETTO */}
+      {/* Popup che compare quando si da la risposta corretta */}
       {showRightPopup && (
         <RightAnswerPopup 
             mode = { mode } 
@@ -244,7 +244,7 @@ function ChatBox({ socket, mode, onUserDisconnection, onTimeExpired, starterSid,
         />
       )}
 
-      {/* Popup SBAGLIATO */}
+      {/* Popup che compare quando si da la risposta sbagliata */}
       {showWrongPopup && (
         <WrongAnswerPopup 
             mode = { mode }

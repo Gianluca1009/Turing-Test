@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import ChatBox from "../components/chatPage/ChatBox";
 import StartChat from "../components/chatPage/StartChat";
 import WaitingForChat from "../components/chatPage/WaitingForChat";
+import GoToLoginPopup from "../components/chatPage/chatBox/GoToLoginPopup";
 import { io } from "socket.io-client";
 import { useAuth } from "../contexts/AuthContext";
 import { useOpponent  } from "../contexts/OpponentContext";
@@ -30,6 +31,8 @@ function ChatPage() {
 
   // useState utile a memorizzare i sids degli utenti (o dell'utente e del bot) che partecipano a una chat
   const [lobbySids, setLobbySids] = useState({ user_1: null, user_2: null });
+
+  const [showGoToLoginPopup, setShowGoToLoginPopup] = useState(false);
 
   // useRef utile a creare un contenitore che sopravvive ai render del componente Chat
   // Verrà utilizzato come riferimento per il socket
@@ -196,11 +199,16 @@ function ChatPage() {
           />
         ) : !started ? (
           !waiting ? (
-            <StartChat handleStart = { handleStart } />
+            <StartChat handleStart = { handleStart } setShowGoToLoginPopup = { setShowGoToLoginPopup } />
           ) : (
             <WaitingForChat />
           )
         ) : null}
+
+        {showGoToLoginPopup && (
+          <GoToLoginPopup setShowGoToLoginPopup = { setShowGoToLoginPopup } />
+        )}
+
     </>
   );
 }
