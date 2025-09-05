@@ -2,11 +2,15 @@ import { useState, useEffect, useRef } from "react";
 import ChoicePopup from "./chatBox/ChoicePopup";
 import RightAnswerPopup from "./chatBox/RightAnswerPopup";
 import WrongAnswerPopup from "./chatBox/WrongAnswerPopup";
+import { useAuth } from "../../contexts/AuthContext";
 
-function ChatBox({ socket, mode, modelName, onUserDisconnection, onTimeExpired, starterSid, lobbySids, started }) {
+function ChatBox({ socket, mode, onUserDisconnection, onTimeExpired, starterSid, lobbySids, started }) {
 
   // Tempo della chat
   const TOTAL_TIME = 15;
+
+  // Importiamo i dati relativi all'utente attivo dal contestp
+  const { user } = useAuth();
 
   // useState che tiene conto di tutti i messaggi inviati nella chat
   const [messages, setMessages] = useState([]);
@@ -31,7 +35,7 @@ function ChatBox({ socket, mode, modelName, onUserDisconnection, onTimeExpired, 
   // useState utile a mostrare il popup di scelta a fine chat
   const [showChoicePopup, setShowChoicePopup] = useState(false);
 
-  // useState utile a mostrare il popup che indica la vittoria o la sconfitta finale
+  // useState utili a mostrare il popup che indica la vittoria o la sconfitta finale
   const [showRightPopup, setShowRightPopup] = useState(false);
   const [showWrongPopup, setShowWrongPopup] = useState(false);
 
@@ -56,12 +60,10 @@ function ChatBox({ socket, mode, modelName, onUserDisconnection, onTimeExpired, 
     socket.on("chat_ended", (data) => {
       if (data.reason === "disconnection") {
         alert("L'altro utente ha abbandonato la chat.");
-        // if (onUserDisconnection) onUserDisconnection(null);
-        if (onUserDisconnection) onUserDisconnection(null);
+        if (onUserDisconnection) onUserDisconnection();
       }
       if (data.reason === "time_expired") {
         setShowChoicePopup(true);
-        // if (onTimeExpired) onTimeExpired();
       }
     });
 
@@ -95,31 +97,6 @@ function ChatBox({ socket, mode, modelName, onUserDisconnection, onTimeExpired, 
       }
     };
   }, [started]);
-  // useEffect(() => {
-  //   if (!started) return;
-
-  //   // Ogni volta che inizia la chat, reimposta il timer al suo valore iniziale
-  //   setTimeLeft(TOTAL_TIME);
-
-  //   // la funzione dentro setInterval viene eseguita ogni 1000 ms (ogni secondo)
-  //   const interval = setInterval(() => {
-  //     // Quando manca un secondo viene interrotto il ciclo e mostrato il popup
-  //     setTimeLeft((prev) => {
-  //       if (prev <= 1) {
-
-  //         // onTimeExpired(socketId);
-
-  //         clearInterval(interval);
-  //         // setShowChoicePopup(true);
-  //         return 0;
-  //       }
-  //       return prev - 1; // Ad ogni iterazione il tempo diminuisce di un secondo 
-  //     });
-  //   }, 1000);
-
-  //   return () => clearInterval(interval);
-  // }, [started]);
-  // }, [started, socketId, onTimeExpired]);
 
   // useEffect utile a scrollare verso il basso quando arriva un nuovo messaggio (all'aggiornamento di 'messages')
   useEffect(() => {
@@ -131,7 +108,11 @@ function ChatBox({ socket, mode, modelName, onUserDisconnection, onTimeExpired, 
     if (!input.trim()) return;
 
     const message = {
-      sender: { username: "user", sid: socket.id },
+      sender: { 
+        username: user.username, 
+        sid: socket.id, 
+        id_user: user.id_user,
+      },
       role: "user",
       text: input,
     };
@@ -144,7 +125,7 @@ function ChatBox({ socket, mode, modelName, onUserDisconnection, onTimeExpired, 
   // Booleano che indica se è il turno dell'utente attivo o no
   const isMyTurn = () => turn === socketId;
 
-  // funzione che gestisce la risposta dell'utente al popup
+  // Funzione che gestisce la risposta dell'utente al popup
   const handleChoicePopupResponse = (answer) => {
     setShowChoicePopup(false);
     if (mode === "bot") {
@@ -184,7 +165,7 @@ function ChatBox({ socket, mode, modelName, onUserDisconnection, onTimeExpired, 
             </div>
 
             <button
-              onClick={() => onUserDisconnection(socketId)}
+              onClick={onUserDisconnection}
               className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-semibold"
             >
               Esci
@@ -257,7 +238,6 @@ function ChatBox({ socket, mode, modelName, onUserDisconnection, onTimeExpired, 
       {showRightPopup && (
         <RightAnswerPopup 
             mode = { mode } 
-            modelName = { modelName } 
             setShowRightPopup = { setShowRightPopup } 
             onTimeExpired = { onTimeExpired }
             sid = { socketId }
@@ -267,8 +247,7 @@ function ChatBox({ socket, mode, modelName, onUserDisconnection, onTimeExpired, 
       {/* Popup SBAGLIATO */}
       {showWrongPopup && (
         <WrongAnswerPopup 
-            mode = { mode } 
-            modelName = { modelName } 
+            mode = { mode }
             setShowWrongPopup = { setShowWrongPopup } 
             onTimeExpired = { onTimeExpired }
             sid = { socketId }

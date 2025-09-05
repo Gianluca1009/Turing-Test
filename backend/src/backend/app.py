@@ -46,18 +46,18 @@ def register(new_user_data: RegistrationData):
         cursor = conn.cursor()
 
         # Controllo duplicati (username)
-        cursor.execute("SELECT * FROM utenti WHERE username=%s", (username,))
+        cursor.execute("SELECT * FROM users WHERE username = %s", (username,))
         if cursor.fetchone():
-            raise HTTPException(status_code=400, detail="Esiste già un account con questo username!")
+            raise HTTPException(status_code = 400, detail = "Esiste già un account con questo username!")
         
         # Controllo duplicati (email)
-        cursor.execute("SELECT * FROM utenti WHERE email=%s", (email,))
+        cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
         if cursor.fetchone():
-            raise HTTPException(status_code=400, detail="Esiste già un account con questa email!")
+            raise HTTPException(status_code = 400, detail = "Esiste già un account con questa email!")
 
         # Inserimento nuovo utente (0 trofei, vittorie e sconfitte iniziali)
         cursor.execute("""
-            INSERT INTO utenti (username, email, pwd, trofei, vittorie, sconfitte)
+            INSERT INTO users (username, email, pwd, trophies, victories, defeats)
             VALUES (%s, %s, %s, %s, %s, %s)
         """, (username, email, password, 0, 0, 0))
         conn.commit()
@@ -81,7 +81,7 @@ def login(user_data: LoginData):
         cursor = conn.cursor(dictionary=True)
 
         # Cerca l'utente per email
-        cursor.execute("SELECT * FROM utenti WHERE email=%s", (email,))
+        cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
         user = cursor.fetchone()
 
         if not user:
@@ -91,15 +91,7 @@ def login(user_data: LoginData):
         if user["pwd"] != password:
             raise HTTPException(status_code=401, detail="Password errata, riprovare")
         
-        return {
-            "message": "Login effettuato con successo",
-            "id_utente": user["id_utente"],
-            "username": user["username"],
-            "email": user["email"],
-            "trofei": user["trofei"],
-            "vittorie": user["vittorie"],
-            "sconfitte": user["sconfitte"]
-        }
+        return user
     
     finally:
         cursor.close()
@@ -108,7 +100,7 @@ def login(user_data: LoginData):
     
     
     
-@fastapi_app.get("/get_classifica_utenti")
+@fastapi_app.get("/get_users_ranking")
 def get_classifica_utenti():
 
     conn = get_connection()
@@ -117,20 +109,20 @@ def get_classifica_utenti():
         cursor = conn.cursor(dictionary=True)
 
         # Cerca l'utente per email
-        cursor.execute("SELECT id_utente, username, trofei FROM utenti ORDER BY trofei DESC")
-        classifica_utenti = cursor.fetchall()
+        cursor.execute("SELECT id_user, username, trophies FROM users ORDER BY trophies DESC")
+        users_ranking = cursor.fetchall()
 
-        if not classifica_utenti:
-            raise HTTPException(status_code=404, detail="Nessun utente trovato")
+        if not users_ranking:
+            raise HTTPException(status_code = 404, detail="Nessun utente trovato")
         
-        return classifica_utenti
+        return users_ranking
     
     finally:
         cursor.close()
         conn.close()
 
 
-@fastapi_app.get("/get_classifica_modelli")
+@fastapi_app.get("/get_models_ranking")
 def get_classifica_modelli():
 
     conn = get_connection()
@@ -138,18 +130,53 @@ def get_classifica_modelli():
     try:
         cursor = conn.cursor(dictionary=True)
 
-        # Cerca l'utente per email
-        cursor.execute("SELECT id_modello, nome, vittorie, sconfitte FROM modelli") 
-        classifica_modelli = cursor.fetchall()
+        # Recupera i dati relativi ai modelli e li mette in ordine di accuratezza (in caso di parità, usa gli id)
+        cursor.execute(""" SELECT 
+                                name,
+                                victories,
+                                defeats
+                            FROM models
+                            ORDER BY 
+                                (CASE 
+                                    WHEN (victories + defeats) > 0 
+                                    THEN (victories / (victories + defeats)) * 100
+                                    ELSE 0 
+                                END) DESC,
+                                id_model ASC;""") 
+        model_ranking = cursor.fetchall()
 
-        if not classifica_modelli:
-            raise HTTPException(status_code=404, detail="Nessun utente trovato")
+        if not model_ranking:
+            raise HTTPException(status_code = 404, detail = "Nessun modello trovato")
         
-        return classifica_modelli
+        return model_ranking
     
     finally:
         cursor.close()
         conn.close()
 
+
+@fastapi_app.get("/get_opponent_trophies/{opponent_username}")
+def get_opponent_data(opponent_username: str):
+
+    conn = get_connection()
+    
+    try:
+        cursor = conn.cursor(dictionary=True)
+
+        # Cerca l'utente per email
+        cursor.execute(
+            "SELECT trophies FROM users WHERE username = %s",
+            (opponent_username,)
+        ) 
+        trophies = cursor.fetchone()
+
+        if not trophies:
+            raise HTTPException(status_code = 404, detail = "Utente non presente nel database")
+        
+        return trophies
+    
+    finally:
+        cursor.close()
+        conn.close()
     
 

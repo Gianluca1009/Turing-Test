@@ -1,6 +1,6 @@
 import React from "react";
 
-function ModelRankingRow({ rank, nome, percentuale, descrizione, logo }) {
+function ModelRankingRow({ rank, name, success_rate, caption, logo }) {
 
   return (
     <div
@@ -24,25 +24,25 @@ function ModelRankingRow({ rank, nome, percentuale, descrizione, logo }) {
           {logo && (
             <img
               src={logo}
-              alt={`${nome} logo`}
+              alt={`${name} logo`}
               className="w-20 h-20 object-contain rounded-lg border shadow-sm shrink-0
                 border-green-400/40 bg-white"
             />
           )}
 
           {/* Nome */}
-          <span className="text-xl font-semibold truncate">{nome}</span>
+          <span className="text-xl font-semibold truncate">{name}</span>
         </div>
 
         {/* Percentuale di successo */}
         <div className="text-lg font-semibold text-green-600 dark:text-green-400 shrink-0">
-          {percentuale}% 
+          {success_rate}% 
         </div>
       </div>
 
       {/* Didascalia */}
-      {descrizione && (
-        <p className="mt-3 text-sm italic opacity-80">{descrizione}</p>
+      {caption && (
+        <p className="mt-3 text-sm italic opacity-80">{caption}</p>
       )}
     </div>
   );

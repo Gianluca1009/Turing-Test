@@ -1,6 +1,6 @@
 import React from "react";
 
-function PlayerRankRow({ rank, username, trofei, icona }) {
+function PlayerRankRow({ rank, username, trophies, icon }) {
   return (
     <div
       className={`max-w-2xl mx-auto mt-6 w-full rounded-xl shadow-md p-4 border transition-colors duration-300 select-none
@@ -18,8 +18,8 @@ function PlayerRankRow({ rank, username, trofei, icona }) {
 
           {/* Icona sempre come immagine rotonda */}
           <img
-            src={icona}
-            alt={`${username} icon`}
+            src={icon}
+            alt={`${trophies} icon`}
             className="w-16 h-16 object-cover rounded-full border shadow-sm shrink-0
               border-green-400/40 bg-white"
           />
@@ -30,7 +30,7 @@ function PlayerRankRow({ rank, username, trofei, icona }) {
 
         {/* Trofei */}
         <div className="flex items-center gap-2 text-lg font-bold text-yellow-500 dark:text-yellow-400 shrink-0">
-          🏆 {trofei}
+          🏆 {trophies}
         </div>
       </div>
     </div>

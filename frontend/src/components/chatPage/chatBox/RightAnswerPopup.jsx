@@ -2,9 +2,23 @@
 
 import { useState } from "react";
 import OpponentInfo from "./OpponentInfo";
+import { useOpponent } from "../../../contexts/OpponentContext";
+import { useAuth } from "../../../contexts/AuthContext";
 
-function RightAnswerPopup({ mode, modelName, setShowRightPopup, onTimeExpired, sid }) {
+function RightAnswerPopup({ mode, setShowRightPopup, onTimeExpired, sid }) {
+
+  const { opponent } = useOpponent();
+  const { user } = useAuth();
   const [feedback, setFeedback] = useState("");
+
+  const earnedTrophies = () => {
+    if (mode === "human") return 10;
+    if (mode === "bot") 
+      if (opponent.rank === 1) return 20;
+      if (opponent.rank === 2) return 15;
+      if (opponent.rank === 3) return 10;
+      if (opponent.rank === 4) return 5;
+  }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -13,18 +27,21 @@ function RightAnswerPopup({ mode, modelName, setShowRightPopup, onTimeExpired, s
 
         {mode === "human" ? (
           <>
-            <h2 className="text-black dark:text-white text-xl font-bold mb-4">✅ Complimenti!</h2>
-            <p className="text-black dark:text-white">Stavi chattando con:</p>
+            <h2 className="text-xl font-bold mb-4">✅ Complimenti!</h2>
+            <p>Stavi chattando con:</p>
 
             <OpponentInfo
               imageUrl = "https://hd2.tudocdn.net/1142397?w=824&h=494" // Memorizzare la foto
-              name = "nome_utente"
-              trophies = {150}
+              name = {opponent.username}
+              trophies = {opponent.trophies}
+              success_rate = {null}
             />
 
-            <p className="text-black dark:text-white">Il tuo nuovo punteggio: tot pt (+10)</p>
+            <p>Hai guadagnato {earnedTrophies()} trofei!</p>
+            <p>Nuovo punteggio: {user.trophies + earnedTrophies()} 🏆</p>
+
             <button
-              className="mt-4 bg-gray-200 dark:bg-gray-900 text-black dark:text-white px-4 py-2 rounded-lg"
+              className="mt-4 bg-gray-200 dark:bg-gray-900 px-4 py-2 rounded-lg"
               onClick={() => {
                 setShowRightPopup(false);
                 onTimeExpired(sid);
@@ -36,21 +53,24 @@ function RightAnswerPopup({ mode, modelName, setShowRightPopup, onTimeExpired, s
         ) : (
           // mode === "bot"
           <>
-            <h2 className="text-black dark:text-white text-xl font-bold mb-4">🎉 Complimenti!</h2>
-            <p className="text-black dark:text-white">Stavi chattando con:</p>
+            <h2 className="text-xl font-bold mb-4">🎉 Complimenti!</h2>
+            <p>Stavi chattando con:</p>
 
             <OpponentInfo
               imageUrl = "https://static.vecteezy.com/system/resources/previews/055/687/055/non_2x/rectangle-gemini-google-icon-symbol-logo-free-png.png" // Memorizzare la foto
-              name = {modelName}
-              trophies = {150}
+              name = {opponent.name}
+              trophies = {null}
+              success_rate = {Math.round(((opponent.victories)/(opponent.victories + opponent.defeats))*100)}
             />
             
-            <p className="text-black dark:text-white">Il tuo nuovo punteggio: tot pt (+10)</p>
-            <h3 className="text-black dark:text-white mt-4 font-semibold">Dai un consiglio all'AI!</h3>
+            <p>Hai guadagnato {earnedTrophies()} trofei!</p>
+            <p>Nuovo punteggio: {user.trophies + earnedTrophies()} 🏆</p>
+
+            <h3 className="mt-4 font-semibold">Dai un consiglio all'AI!</h3>
             <p>Cosa ti ha fatto capire di star parlando con un bot?</p>
 
             <textarea
-              className="w-full p-2 mt-4 border rounded-lg bg-gray-200 dark:bg-gray-700 text-black dark:text-white"
+              className="w-full p-2 mt-4 border rounded-lg bg-gray-200 dark:bg-gray-700"
               rows="3"
               placeholder="Lascia un feedback..."
               value={feedback}
@@ -58,7 +78,7 @@ function RightAnswerPopup({ mode, modelName, setShowRightPopup, onTimeExpired, s
             />
 
             <button
-              className="mt-4 bg-gray-200 dark:bg-gray-900 text-black dark:text-white px-4 py-2 rounded-lg"
+              className="mt-4 bg-gray-200 dark:bg-gray-900 px-4 py-2 rounded-lg"
               onClick={() => {
                 setShowRightPopup(false);
                 onTimeExpired(sid);

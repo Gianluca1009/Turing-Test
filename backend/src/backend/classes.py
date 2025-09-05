@@ -6,6 +6,7 @@ import google.generativeai as genai # type: ignore
 class User(BaseModel):
     username: str
     sid: str
+    id_user: int
     
 # Gestisce i dati relativi al LLM
 class Model(BaseModel):

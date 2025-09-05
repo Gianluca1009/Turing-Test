@@ -35,6 +35,10 @@ Lista di cose da fare:
 
 17. Exceptions?
 
+18. Rendere impossibile matchare con se stessi (con l'id utente!)
+
+19. Colore diverso nella classifica per il proprio utente
+
 
 
 ISTRUZIONI PER ACCEDERE AL DB DA UBUNTU

@@ -26,10 +26,12 @@ def register_socket_handlers(sio):
 
     @sio.event
     async def join_lobby(sid: str, request: ChatRequest):
-        """Funzione che inserisce un utente in una lobby, creandone una nuova se necessario"""
+        """ Funzione che inserisce un utente in una lobby, creandone una nuova se necessario """
         
         request = ChatRequest(**request)
-        user = request.user  # Viene creato un oggetto User con i dati passati
+        
+        # Viene creato un oggetto User con i dati passati
+        user = request.user  
 
         if request.mode == "bot":
             
@@ -48,8 +50,8 @@ def register_socket_handlers(sio):
                 "lobby_id": lobby.lobby_id, 
                 "user_1_sid": lobby.user_1.sid, 
                 "user_2_sid": lobby.llm.sid,
+                "opponent_username": lobby.llm.name, 
                 "user_1_starts": user_1_starts,
-                "model_name": lobby.llm.name
             }, room=user.sid)
             
             # Se 'bot_starts == True', chiama 'handle_bot_response' per generare il primo messaggio dell'AI
@@ -77,9 +79,9 @@ def register_socket_handlers(sio):
                     await sio.emit("chat_ready", {
                         "lobby_id": lobby_id, 
                         "user_1_sid": lobby.user_1.sid, 
-                        "user_2_sid": lobby.user_2.sid, 
+                        "user_2_sid": lobby.user_2.sid,
+                        "opponent_username": lobby.user_1.username,
                         "user_1_starts": user_1_starts,
-                        "model_name": None
                     }, room=user.sid)
                     
                     # Notifica anche il primo utente
@@ -88,8 +90,8 @@ def register_socket_handlers(sio):
                             "lobby_id": lobby_id, 
                             "user_1_sid": lobby.user_1.sid, 
                             "user_2_sid": lobby.user_2.sid, 
+                            "opponent_username": lobby.user_2.username,
                             "user_1_starts": user_1_starts,
-                            "model_name": None
                         }, room=lobby.user_1.sid)
                         
                     found = True

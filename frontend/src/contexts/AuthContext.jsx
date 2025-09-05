@@ -9,9 +9,8 @@ export function AuthProvider({ children }) {
 
   // Funzione che permette di fare il login
   const login = (data) => {
-    // Rimuoviamo message, che è il messaggio di avvenuto login inviato dal backend
+
     const userData = { ...data };
-    delete userData.message; 
 
     setUser(userData);
   };
