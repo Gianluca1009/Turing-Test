@@ -4,10 +4,17 @@ import RightAnswerPopup from "./chatBox/RightAnswerPopup";
 import WrongAnswerPopup from "./chatBox/WrongAnswerPopup";
 import { useAuth } from "../../contexts/AuthContext";
 
-function ChatBox({ socket, mode, onUserDisconnection, onTimeExpired, starterSid, lobbySids, started }) {
-
+function ChatBox({
+  socket,
+  mode,
+  onUserDisconnection,
+  onTimeExpired,
+  starterSid,
+  lobbySids,
+  started,
+}) {
   // Tempo della chat
-  const TOTAL_TIME = 15;
+  const TOTAL_TIME = 30;
 
   // Importiamo i dati relativi all'utente attivo dal contestp
   const { user } = useAuth();
@@ -25,7 +32,7 @@ function ChatBox({ socket, mode, onUserDisconnection, onTimeExpired, starterSid,
   const [turn, setTurn] = useState(starterSid);
 
   // useState che tiene il conto del tempo rimanente
-  const [timeLeft, setTimeLeft] = useState(TOTAL_TIME); 
+  const [timeLeft, setTimeLeft] = useState(TOTAL_TIME);
 
   const timerRef = useRef(null);
 
@@ -71,8 +78,14 @@ function ChatBox({ socket, mode, onUserDisconnection, onTimeExpired, starterSid,
       socket.off("receive_chat_message");
       socket.off("chat_ended");
     };
-  }, [socket, lobbySids.user_1, lobbySids.user_2, onUserDisconnection, onTimeExpired, socketId]);
-
+  }, [
+    socket,
+    lobbySids.user_1,
+    lobbySids.user_2,
+    onUserDisconnection,
+    onTimeExpired,
+    socketId,
+  ]);
 
   useEffect(() => {
     if (!started) return;
@@ -108,9 +121,9 @@ function ChatBox({ socket, mode, onUserDisconnection, onTimeExpired, starterSid,
     if (!input.trim()) return;
 
     const message = {
-      sender: { 
-        username: user.username, 
-        sid: socket.id, 
+      sender: {
+        username: user.username,
+        sid: socket.id,
         id_user: user.id_user,
       },
       role: "user",
@@ -125,14 +138,42 @@ function ChatBox({ socket, mode, onUserDisconnection, onTimeExpired, starterSid,
   // Booleano che indica se è il turno dell'utente attivo o no
   const isMyTurn = () => turn === socketId;
 
+  const updateStats = async (user, result, opponent) => {
+    try {
+      const response = await fetch("http://localhost:8003/update_stats", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: user.username,
+          match_result: result,
+          opponent: opponent,
+        }),
+      });
+
+      if (!response.ok) {
+        const errData = await response.json();
+        console.error("Errore aggiornamento stats:", errData.detail || errData);
+      } else {
+        const data = await response.json();
+        console.log("Stats aggiornate:", data);
+      }
+    } catch (error) {
+      console.error("Errore nella chiamata API:", error);
+    }
+  };
+
   // Funzione che gestisce la risposta dell'utente al popup
   const handleChoicePopupResponse = (answer) => {
     setShowChoicePopup(false);
     if (mode === "bot") {
-      answer ? setShowRightPopup(true) : setShowWrongPopup(true)
+      answer
+        ? (setShowRightPopup(true), updateStats(user, 1, mode))
+        : (setShowWrongPopup(true), updateStats(user, 0, mode));
     }
     if (mode === "human") {
-      answer ? setShowWrongPopup(true) : setShowRightPopup(true) 
+      answer
+        ? (setShowWrongPopup(true), updateStats(user, 0, mode))
+        : (setShowRightPopup(true), updateStats(user, 1, mode));
     }
   };
 
@@ -160,7 +201,8 @@ function ChatBox({ socket, mode, onUserDisconnection, onTimeExpired, starterSid,
                 ></div>
               </div>
               <span className="text-sm text-gray-700 dark:text-gray-300 mt-1">
-                {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, "0")}
+                {Math.floor(timeLeft / 60)}:
+                {(timeLeft % 60).toString().padStart(2, "0")}
               </span>
             </div>
 
@@ -196,7 +238,7 @@ function ChatBox({ socket, mode, onUserDisconnection, onTimeExpired, starterSid,
                   <span className="w-2 h-2 bg-green-500 rounded-full animate-bounce"></span>
                 </div>
               </div>
-            )} 
+            )}
 
             <div ref={messagesEndRef} />
           </main>
@@ -231,26 +273,26 @@ function ChatBox({ socket, mode, onUserDisconnection, onTimeExpired, starterSid,
 
       {/* Popup che richiede di scegliere tra bot e ai */}
       {showChoicePopup && (
-        <ChoicePopup handleChoicePopupResponse = { handleChoicePopupResponse }/>
+        <ChoicePopup handleChoicePopupResponse={handleChoicePopupResponse} />
       )}
 
       {/* Popup che compare quando si da la risposta corretta */}
       {showRightPopup && (
-        <RightAnswerPopup 
-            mode = { mode } 
-            setShowRightPopup = { setShowRightPopup } 
-            onTimeExpired = { onTimeExpired }
-            sid = { socketId }
+        <RightAnswerPopup
+          mode={mode}
+          setShowRightPopup={setShowRightPopup}
+          onTimeExpired={onTimeExpired}
+          sid={socketId}
         />
       )}
 
       {/* Popup che compare quando si da la risposta sbagliata */}
       {showWrongPopup && (
-        <WrongAnswerPopup 
-            mode = { mode }
-            setShowWrongPopup = { setShowWrongPopup } 
-            onTimeExpired = { onTimeExpired }
-            sid = { socketId }
+        <WrongAnswerPopup
+          mode={mode}
+          setShowWrongPopup={setShowWrongPopup}
+          onTimeExpired={onTimeExpired}
+          sid={socketId}
         />
       )}
     </div>
@@ -258,5 +300,3 @@ function ChatBox({ socket, mode, onUserDisconnection, onTimeExpired, starterSid,
 }
 
 export default ChatBox;
-
-

@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import socketio  # type: ignore
 import logging
-from src.backend.classes import RegistrationData, LoginData
+from src.backend.classes import RegistrationData, LoginData, StatsUpdate
 from src.backend.utilities.lobby_utilities import *
 from src.backend.utilities.AI_utilities import *
 from src.backend.sockets import register_socket_handlers
@@ -175,4 +175,42 @@ def get_opponent_data(opponent_username: str):
         cursor.close()
         conn.close()
     
+@fastapi_app.post("/update_stats")
+def update_stats(data: StatsUpdate):
+    user_name = data.username
+    match_result = data.match_result
+    opponent = data.opponent
+
+    if match_result:
+        if opponent == "human":
+            amount = 15
+        elif opponent == "bot":
+            amount = 15
+        query = "UPDATE users" \
+        "SET trophies = trophies + %d, victories = victories + 1" \
+        "WHERE username = %s"
+
+    elif not match_result:
+        if opponent == "human":
+            amount = 15
+        elif opponent == "bot":
+            amount = 15
+        query = "UPDATE users" \
+        "SET trophies = trophies + %d, defeats = defeats + 1" \
+        "WHERE username = %s"
+
+    conn = get_connection()
+
+    try:
+        cursor = conn.cursor()
+
+        cursor.execute(query, (amount, user_name))
+        conn.commit()
+
+        if cursor.rowcount <= 0:
+            raise HTTPException(status_code = 404, detail = "Errore nell'aggiornamento delle statistiche")
+        
+    finally:
+        cursor.close()
+        conn.close()
 

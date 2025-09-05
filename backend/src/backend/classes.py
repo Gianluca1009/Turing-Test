@@ -48,3 +48,8 @@ class RegistrationData(BaseModel):
 class LoginData(BaseModel):
     email: str
     password: str
+
+class StatsUpdate(BaseModel):
+    username: str
+    match_result: int
+    opponent: str
