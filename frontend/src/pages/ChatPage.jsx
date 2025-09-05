@@ -14,7 +14,7 @@ function ChatPage() {
   const { user } = useAuth();
 
   // Recuperiamo dal contesto le funzioni per memorizzare i dati relativi all'avversario durante la partita
-  const { setOpponentData, clearOpponent } = useOpponent();
+  const { setOpponentData, clearOpponentData } = useOpponent();
 
   // useState utile a gestire l'inizio della chat
   const [started, setStarted] = useState(false);
@@ -160,7 +160,7 @@ function ChatPage() {
     setAI(false);
     setStarterSid(null)
     setLobbySids({ user_1: null, user_2: null });
-    clearOpponent();
+    clearOpponentData();
   }
 
   // Funzione utile a disconnettere l'utente nel caso l'altro esca dalla chat 
