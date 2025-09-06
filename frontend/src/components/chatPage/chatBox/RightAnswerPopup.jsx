@@ -20,6 +20,24 @@ function RightAnswerPopup({ mode, setShowRightPopup, onTimeExpired, sid }) {
       if (opponent.rank === 4) return 5;
   }
 
+  const updateStats = async () => {
+    try {
+      await fetch("http://localhost:8003/update_stats", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: user.username,
+          opponent_name: opponent.name,
+          add: true, // Bisogna aggiungere i trofei, visto che è stata data la risposta corretta
+          amount: earnedTrophies(),
+          is_opponent_ai: mode === "bot",
+        }),
+      });
+    } catch (error) {
+      console.error("Errore nella chiamata API:", error);
+    }
+  }
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
 
@@ -32,7 +50,7 @@ function RightAnswerPopup({ mode, setShowRightPopup, onTimeExpired, sid }) {
 
             <OpponentInfo
               imageUrl = "https://hd2.tudocdn.net/1142397?w=824&h=494" // Memorizzare la foto
-              name = {opponent.username}
+              name = {opponent.name}
               trophies = {opponent.trophies}
               success_rate = {null}
             />
@@ -44,7 +62,8 @@ function RightAnswerPopup({ mode, setShowRightPopup, onTimeExpired, sid }) {
               className="mt-4 bg-gray-200 dark:bg-gray-900 px-4 py-2 rounded-lg"
               onClick={() => {
                 setShowRightPopup(false);
-                onTimeExpired(sid);
+                onTimeExpired(sid)
+                updateStats(); // Aggiorniamo le stats del db in base alla risposta
               }}
             >
               Ok
@@ -82,6 +101,7 @@ function RightAnswerPopup({ mode, setShowRightPopup, onTimeExpired, sid }) {
               onClick={() => {
                 setShowRightPopup(false);
                 onTimeExpired(sid);
+                updateStats(); // Aggiorniamo le stats del db in base alla risposta
               }}
             >
               Ok

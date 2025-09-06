@@ -14,7 +14,7 @@ function ChatBox({
   started,
 }) {
   // Tempo della chat
-  const TOTAL_TIME = 30;
+  const TOTAL_TIME = 15;
 
   // Importiamo i dati relativi all'utente attivo dal contestp
   const { user } = useAuth();
@@ -138,42 +138,20 @@ function ChatBox({
   // Booleano che indica se è il turno dell'utente attivo o no
   const isMyTurn = () => turn === socketId;
 
-  const updateStats = async (user, result, opponent) => {
-    try {
-      const response = await fetch("http://localhost:8003/update_stats", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username: user.username,
-          match_result: result,
-          opponent: opponent,
-        }),
-      });
-
-      if (!response.ok) {
-        const errData = await response.json();
-        console.error("Errore aggiornamento stats:", errData.detail || errData);
-      } else {
-        const data = await response.json();
-        console.log("Stats aggiornate:", data);
-      }
-    } catch (error) {
-      console.error("Errore nella chiamata API:", error);
-    }
-  };
+  
 
   // Funzione che gestisce la risposta dell'utente al popup
   const handleChoicePopupResponse = (answer) => {
     setShowChoicePopup(false);
     if (mode === "bot") {
       answer
-        ? (setShowRightPopup(true), updateStats(user, 1, mode))
-        : (setShowWrongPopup(true), updateStats(user, 0, mode));
+        ? (setShowRightPopup(true))
+        : (setShowWrongPopup(true));
     }
     if (mode === "human") {
       answer
-        ? (setShowWrongPopup(true), updateStats(user, 0, mode))
-        : (setShowRightPopup(true), updateStats(user, 1, mode));
+        ? (setShowWrongPopup(true))
+        : (setShowRightPopup(true));
     }
   };
 

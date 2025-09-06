@@ -119,7 +119,7 @@ function ChatPage() {
 
               // Memorizza nel contesto
               setOpponentData({
-                username: data.opponent_username,
+                name: data.opponent_username,
                 trophies: opponentData.trophies
               });
             } catch (err) {

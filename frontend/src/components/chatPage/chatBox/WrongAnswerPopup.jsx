@@ -9,6 +9,24 @@ function WrongAnswerPopup({ mode, setShowWrongPopup, onTimeExpired, sid }) {
   const { opponent } = useOpponent();
 
   const { user } = useAuth();
+
+  const updateStats = async () => {
+    try {
+      await fetch("http://localhost:8003/update_stats", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: user.username,
+          opponent_name: opponent.name,
+          add: false, // Bisogna sottrarre i trofei, visto che è stata data la risposta sbagliata
+          amount: 10,
+          is_opponent_ai: mode === "bot",
+        }),
+      });
+    } catch (error) {
+      console.error("Errore nella chiamata API:", error);
+    }
+  }
   
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -20,7 +38,7 @@ function WrongAnswerPopup({ mode, setShowWrongPopup, onTimeExpired, sid }) {
 
             <OpponentInfo
               imageUrl = "https://hd2.tudocdn.net/1142397?w=824&h=494" // Memorizzare la foto
-              name = {opponent.username}
+              name = {opponent.name}
               trophies = {opponent.trophies}
               success_rate = {null}
             />
@@ -32,6 +50,7 @@ function WrongAnswerPopup({ mode, setShowWrongPopup, onTimeExpired, sid }) {
               onClick={() => {
                 setShowWrongPopup(false);
                 onTimeExpired(sid);
+                updateStats();
               }}
             >
               Ok
@@ -59,6 +78,7 @@ function WrongAnswerPopup({ mode, setShowWrongPopup, onTimeExpired, sid }) {
               onClick={() => {
                 setShowWrongPopup(false);
                 onTimeExpired(sid);
+                updateStats();
               }}
             >
               Ok

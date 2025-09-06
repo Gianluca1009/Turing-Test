@@ -175,41 +175,82 @@ def get_opponent_data(opponent_username: str):
         cursor.close()
         conn.close()
     
+    
 @fastapi_app.post("/update_stats")
 def update_stats(data: StatsUpdate):
     user_name = data.username
-    match_result = data.match_result
-    opponent = data.opponent
-
-    if match_result:
-        if opponent == "human":
-            amount = 15
-        elif opponent == "bot":
-            amount = 15
-        query = "UPDATE users" \
-        "SET trophies = trophies + %d, victories = victories + 1" \
-        "WHERE username = %s"
-
-    elif not match_result:
-        if opponent == "human":
-            amount = 15
-        elif opponent == "bot":
-            amount = 15
-        query = "UPDATE users" \
-        "SET trophies = trophies + %d, defeats = defeats + 1" \
-        "WHERE username = %s"
+    opponent_name = data.opponent_name
+    add = data.add
+    amount = data.amount 
+    is_opponent_ai = data.is_opponent_ai
 
     conn = get_connection()
-
     try:
         cursor = conn.cursor()
 
-        cursor.execute(query, (amount, user_name))
+        if add:
+            # User vince: aumentano i trofei e le vittorie
+            query_user = """
+                UPDATE users
+                SET trophies = trophies + %s,
+                    victories = victories + 1
+                WHERE username = %s
+            """
+            cursor.execute(query_user, (amount, user_name))
+            
+            if cursor.rowcount <= 0:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Errore nell'aggiornamento delle statistiche dell'utente"
+            )
+
+            # Opponent perde: aumenta sconfitte SOLO se isBot
+            if is_opponent_ai:
+                query_opponent = """
+                    UPDATE models
+                    SET defeats = defeats + 1
+                    WHERE name = %s
+                """
+                cursor.execute(query_opponent, (opponent_name,))
+                
+                if cursor.rowcount <= 0:
+                    raise HTTPException(
+                        status_code=404,
+                        detail="Errore nell'aggiornamento delle statistiche del modello"
+                )
+        else:
+            # User perde: diminuiscono i trofei (minimo 0) e aumentano le sconfitte
+            query_user = """
+                UPDATE users
+                SET trophies = GREATEST(trophies - %s, 0),
+                    defeats = defeats + 1
+                WHERE username = %s
+            """
+            cursor.execute(query_user, (amount, user_name))
+            
+            if cursor.rowcount <= 0:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Errore nell'aggiornamento delle statistiche dell'utente"
+            )
+
+            # Opponent vince: aumenta vittorie SOLO se isBot
+            if is_opponent_ai:
+                query_opponent = """
+                    UPDATE models
+                    SET victories = victories + 1
+                    WHERE name = %s
+                """
+                cursor.execute(query_opponent, (opponent_name,))
+                
+                if cursor.rowcount <= 0:
+                    raise HTTPException(
+                        status_code=404,
+                        detail="Errore nell'aggiornamento delle statistiche del modello"
+                )
+
         conn.commit()
 
-        if cursor.rowcount <= 0:
-            raise HTTPException(status_code = 404, detail = "Errore nell'aggiornamento delle statistiche")
-        
     finally:
         cursor.close()
         conn.close()
