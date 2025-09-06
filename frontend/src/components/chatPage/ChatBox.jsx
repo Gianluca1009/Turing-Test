@@ -1,3 +1,5 @@
+// ChatBox.jsx ritorna il container per la chat
+
 import { useState, useEffect, useRef } from "react";
 import ChoicePopup from "./chatBox/ChoicePopup";
 import RightAnswerPopup from "./chatBox/RightAnswerPopup";
@@ -12,15 +14,14 @@ function ChatBox({
   starterSid,
   lobbySids,
   started,
+  messages,
+  setMessages
 }) {
   // Tempo della chat
   const TOTAL_TIME = 15;
 
   // Importiamo i dati relativi all'utente attivo dal contestp
   const { user } = useAuth();
-
-  // useState che tiene conto di tutti i messaggi inviati nella chat
-  const [messages, setMessages] = useState([]);
 
   // useState che tiene conto del testo scritto nella barra d'invio
   const [input, setInput] = useState("");
@@ -34,6 +35,8 @@ function ChatBox({
   // useState che tiene il conto del tempo rimanente
   const [timeLeft, setTimeLeft] = useState(TOTAL_TIME);
 
+  // useRef utile a creare un contenitore che sopravvive ai render della componente 
+  // Verrà utilizzato come riferimento per il timer
   const timerRef = useRef(null);
 
   // useRef utile a scrollare in basso nella chat quando arriva un nuovo messaggio
@@ -85,14 +88,20 @@ function ChatBox({
     onUserDisconnection,
     onTimeExpired,
     socketId,
+    setMessages
   ]);
 
   useEffect(() => {
+
     if (!started) return;
     setTimeLeft(TOTAL_TIME);
 
+    // Crea una funzione che viene eseguita ogni secondo (1000 ms)
     timerRef.current = setInterval(() => {
+
+      // Aggiorna il tempo rimanente
       setTimeLeft((prev) => {
+        // Se il tempo termina, gestisce la fine della chat
         if (prev <= 1) {
           clearInterval(timerRef.current);
           timerRef.current = null;
@@ -103,6 +112,7 @@ function ChatBox({
       });
     }, 1000);
 
+    // Se il componente si smonta o started cambia valore, azzera il timer 
     return () => {
       if (timerRef.current) {
         clearInterval(timerRef.current);
@@ -140,7 +150,7 @@ function ChatBox({
 
   
 
-  // Funzione che gestisce la risposta dell'utente al popup
+  // Funzione che gestisce la risposta dell'utente al popup (answer === 'true' indica che la risposta data è giusta)
   const handleChoicePopupResponse = (answer) => {
     setShowChoicePopup(false);
     if (mode === "bot") {

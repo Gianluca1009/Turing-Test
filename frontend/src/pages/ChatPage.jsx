@@ -15,7 +15,7 @@ function ChatPage() {
   const { user } = useAuth();
 
   // Recuperiamo dal contesto le funzioni per memorizzare i dati relativi all'avversario durante la partita
-  const { setOpponentData, clearOpponentData } = useOpponent();
+  const { opponent, setOpponentData, clearOpponentData } = useOpponent();
 
   // useState utile a gestire l'inizio della chat
   const [started, setStarted] = useState(false);
@@ -34,6 +34,9 @@ function ChatPage() {
 
   const [showGoToLoginPopup, setShowGoToLoginPopup] = useState(false);
 
+  // useState che tiene conto di tutti i messaggi inviati durante una chat
+  const [messages, setMessages] = useState([]);
+
   // useRef utile a creare un contenitore che sopravvive ai render del componente Chat
   // Verrà utilizzato come riferimento per il socket
   const socketRef = useRef(null);
@@ -47,6 +50,7 @@ function ChatPage() {
       }
     };
   }, []);
+
 
   const handleStart = (mode) => {
     // Viene creato il socket e assegnato all'attributo current di socketRef (al click del bottone startChat)
@@ -89,15 +93,14 @@ function ChatPage() {
     socket.on("chat_ready", async (data) => {
       console.log("Chat pronta con lobby:", data.lobby_id);
 
-      
       setWaiting(false);
       setStarted(true);
       
       // starterSid contiene il sid dell'utente che deve iniziare la conversazione
       if (data.user_1_starts === true) {
-        setStarterSid(data.user_1_sid) 
+        setStarterSid(data.user_1_sid); 
       } else {
-        setStarterSid(data.user_2_sid)
+        setStarterSid(data.user_2_sid);
       }
 
       // vengono salvati in lobbySids i sid di tutti e due gli utenti
@@ -106,60 +109,63 @@ function ChatPage() {
         user_2: data.user_2_sid,
       });
 
-      if (data.opponent_username) {
 
-        if (mode === "human") {
-
-            try {
-              const res = await fetch(`http://localhost:8003/get_opponent_data/${data.opponent_username}`);
-              if (!res.ok) {
-                throw new Error(`Errore HTTP: ${res.status}`);
-              }
-              const opponentData = await res.json();
-
-              // Memorizza nel contesto
-              setOpponentData({
-                name: data.opponent_username,
-                id: opponentData.id_user,
-                trophies: opponentData.trophies
-              });
-            } catch (err) {
-              console.error("Errore nel recupero dati avversario:", err);
-            }
-
+      if (mode === "human") {
+        // Se l'interlocutore è un altro utente, recuperiamo i suoi dati dal db per inserirli nel contesto
+        try {
+          const res = await fetch(`http://localhost:8003/get_opponent_data/${data.opponent_username}`);
+          if (!res.ok) {
+            throw new Error(`Errore HTTP: ${res.status}`);
           }
-        
+          const opponentData = await res.json();
 
-        if (mode === "bot") {
-            try {
-              const res = await fetch("http://localhost:8003/get_models_ranking")
-              if (!res.ok) throw new Error("Errore fetch classifica modelli");
-              const model_ranking = await res.json();
-
-              const model = model_ranking.find(
-                (m) => m.name.toLowerCase() === data.opponent_username.toLowerCase()
-              );
-
-              if (model) {
-                setOpponentData({
-                  type: "model",
-                  id: model.id_model,
-                  name: model.name,
-                  rank: model_ranking.indexOf(model) + 1,
-                  victories: model.victories,
-                  defeats: model.defeats, 
-                });
-              }
-            } catch (err) {
-              console.error("Errore nel recupero dati avversario:", err);
-            }
+          // Memorizziamo i dati dell'utente avversario nel contesto
+          setOpponentData({
+            name: data.opponent_username,
+            id: opponentData.id_user,
+            trophies: opponentData.trophies
+          });
+        } catch (err) {
+          console.error("Errore nel recupero dati avversario:", err);
         }
       }
-    }
-  )}
 
-  // Funzione per salvare i dati della chat sul backend
-const saveChatData = async (userId, opponentId, llmId) => {
+
+      if (mode === "bot") {
+        // Se l'interlocutore è un bot, recuperiamo i suoi dati dal db per inserirli nel contesto
+        // Utilizziamo l'endpoint che ritorna la classifica completa dei modelli per ottenere l'attuale ranking
+        try {
+          const res = await fetch("http://localhost:8003/get_models_ranking");
+          if (!res.ok) throw new Error("Errore fetch classifica modelli");
+          const modelRanking = await res.json();
+
+          const model = modelRanking.find(
+            (m) => m.name.toLowerCase() === data.opponent_username.toLowerCase()
+          );
+
+          if (model) {
+            // Memorizziamo i dati del bot avversario nel contesto
+            setOpponentData({
+              id: model.id_model,
+              name: model.name,
+              rank: modelRanking.indexOf(model) + 1,
+              victories: model.victories,
+              defeats: model.defeats, 
+            });
+          }
+        } catch (err) {
+          console.error("Errore nel recupero dati avversario:", err);
+        }
+      }
+    });
+  };
+
+
+// Funzione per passare i dati, compresi i messaggi della chat al backend
+const saveChatData = async () => {
+  // Se opponent ha l'attributo rank, vuol dire che l'avversario è un AI
+  const isOpponentAi = opponent.rank ? true : false;
+
   try {
     const res = await fetch("http://localhost:8003/save_chat_data", {
       method: "POST",
@@ -167,9 +173,14 @@ const saveChatData = async (userId, opponentId, llmId) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        user_id: user.id_user,
-        opponent_id: mode === "human" ? opponent.id : null,
-        llm_id: mode === "bot" ? opponent.id : null,
+        id_user_1: user.id_user,
+        id_user_2: !isOpponentAi ? opponent.id : null,
+        id_model: isOpponentAi ? opponent.id : null,
+        messages: messages.map((msg) => ({
+          id_user: msg.sender.id_user ?? null, // Se id_user è undefined o null ritorna null
+          id_model: msg.sender.id_user ? null : opponent.id, // se il mittente è un bot inserice l'id del modello
+          message: msg.text, 
+        })),
       }),
     });
 
@@ -177,12 +188,11 @@ const saveChatData = async (userId, opponentId, llmId) => {
       throw new Error(`Errore HTTP: ${res.status}`);
     }
 
-    const data = await res.json();
-    console.log("Chat salvata:", data.message);
   } catch (err) {
     console.error("Errore salvataggio chat:", err);
   }
 };
+
 
   // Funzione utile a resettare i valori degli useState quando termina la chat
   const resetValues = () => {
@@ -192,6 +202,7 @@ const saveChatData = async (userId, opponentId, llmId) => {
     setStarterSid(null)
     setLobbySids({ user_1: null, user_2: null });
     clearOpponentData();
+    setMessages([]);
   }
 
   // Funzione utile a disconnettere l'utente nel caso l'altro esca dalla chat 
@@ -205,10 +216,15 @@ const saveChatData = async (userId, opponentId, llmId) => {
   }
 
   // FUnzione utile a disconnettere l'utente quando la chat termina correttamente, dopo i popup finali
-  const onTimeExpired = () => {
+  const onTimeExpired = async () => {
+
+    // Solo lo user_1 memorizza i dati nel database, così non si hanno mai duplicati
+    if (socketRef.current && socketRef.current.id === lobbySids.user_1) {
+      saveChatData();
+    }
 
     resetValues();
-
+    
     // disconnessione soft nel backend
     socketRef.current.emit("time_expired");
   }
@@ -224,6 +240,8 @@ const saveChatData = async (userId, opponentId, llmId) => {
             starterSid = { starterSid }
             lobbySids = { lobbySids }
             started = { started }
+            messages = { messages }
+            setMessages = { setMessages }
           />
         ) : !started ? (
           !waiting ? (

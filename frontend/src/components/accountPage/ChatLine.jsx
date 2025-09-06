@@ -1,31 +1,28 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 
-function ChatLine({ opponent, date, result, onClick }) {
+function ChatLine({ chat, opponent_name }) {
+  const navigate = useNavigate();
+
+  const openOldChat = () => {
+    // Passiamo i dati della chat alla pagina OldChatBox tramite state
+    navigate(`/old-chat/${chat.id_chat}`, { state: { chat } });
+  };
+
   return (
-    <div
-      className="flex justify-between items-center p-4 border-b border-gray-300 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-800 cursor-pointer transition-colors duration-200"
-      onClick={onClick}
-    >
-      {/* Nome avversario */}
+    <div className="flex justify-between items-center p-4 border-b border-gray-300 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors duration-200">
+      {/* vs Nome Avversario */}
       <div className="text-lg font-semibold text-green-600 dark:text-green-400">
-        {opponent}
+        {opponent_name}
       </div>
 
-      {/* Data */}
-      <div className="text-sm text-gray-600 dark:text-gray-400 italic">
-        {new Date(date).toLocaleString()}
-      </div>
-
-      {/* Esito */}
-      <div
-        className={`text-sm font-bold px-3 py-1 rounded-lg ${
-          result === "win"
-            ? "bg-green-500 text-black"
-            : "bg-red-500 text-white"
-        }`}
+      {/* Bottone apri */}
+      <button
+        onClick={openOldChat}
+        className="px-4 py-1 bg-green-500 text-white rounded-lg hover:bg-green-600 transition"
       >
-        {result === "win" ? "Vittoria" : "Sconfitta"}
-      </div>
+        Apri
+      </button>
     </div>
   );
 }

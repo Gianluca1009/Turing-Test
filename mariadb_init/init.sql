@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS reviews (
 
 --- DEFINIRE LA STRUTTURA DEL DB
 -- Tabella Chat
-CREATE TABLE IF NOT EXISTS chat (
+CREATE TABLE IF NOT EXISTS chats (
     id_chat INT AUTO_INCREMENT PRIMARY KEY,
     id_user_1 INT NOT NULL,
     id_user_2 INT,  -- NULL se parli con IA
@@ -43,15 +43,14 @@ CREATE TABLE IF NOT EXISTS chat (
 );
 
 -- Tabella Messaggi
-CREATE TABLE IF NOT EXISTS messagges (
-    id_messagge INT AUTO_INCREMENT PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS messages (
+    id_message INT AUTO_INCREMENT PRIMARY KEY,
     id_chat INT NOT NULL,
     id_user INT,  -- NULL se scritto da IA
     id_model INT, -- NULL se scritto da umano
-    messagge TEXT NOT NULL,
-    send_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    message TEXT NOT NULL,
 
-    FOREIGN KEY (id_chat) REFERENCES chat(id_chat) ON DELETE CASCADE,
+    FOREIGN KEY (id_chat) REFERENCES chats(id_chat) ON DELETE CASCADE,
     FOREIGN KEY (id_user) REFERENCES users(id_user),
     FOREIGN KEY (id_model) REFERENCES models(id_model)
 );

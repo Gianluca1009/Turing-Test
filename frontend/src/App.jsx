@@ -67,7 +67,7 @@ function App() {
         <Route path = "/chat" element = { <ChatPage /> } />
         <Route path = "/classifica" element = { <RankingPage /> } />
         <Route path = "/account" element = { <AccountPage /> } />
-        <Route path = "/about" element = { <OldChatBox opponent={"avversario"} result={"vittoria"}/> } />
+        <Route path="/old-chat/:id_chat" element={<OldChatBox />} />
         {/* <Route path = "/classifica" element = { <LogRegPopup /> } /> */}
       </Routes>
     </div>

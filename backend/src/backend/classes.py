@@ -57,7 +57,14 @@ class StatsUpdate(BaseModel):
     amount: str # Indica la quantità di trofei da aggiungere o togliere
     is_opponent_ai: bool # Se l'avversario è umano non bisogna aggiornare anche i suoi dati
 
-class ChatIds(BaseModel):
-    user_id: int
-    opponent_id: Optional[int] = None
-    llm_id: Optional[int] = None
+class MessageData(BaseModel):
+    id_user: Optional[int] = None
+    id_model: Optional[int] = None
+    message: str # Testo contenuto nel messaggio
+    
+class ChatData(BaseModel):
+    id_user_1: int
+    id_user_2: Optional[int] = None
+    id_model: Optional[int] = None
+    messages: list[MessageData]
+    
