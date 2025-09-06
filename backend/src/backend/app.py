@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import socketio  # type: ignore
 import logging
-from src.backend.classes import RegistrationData, LoginData, StatsUpdate
+from src.backend.classes import RegistrationData, LoginData, StatsUpdate, ChatIds
 from src.backend.utilities.lobby_utilities import *
 from src.backend.utilities.AI_utilities import *
 from src.backend.sockets import register_socket_handlers
@@ -130,7 +130,8 @@ def get_classifica_modelli():
         cursor.execute(""" SELECT 
                                 name,
                                 victories,
-                                defeats
+                                defeats,
+                                id_model,
                             FROM models
                             ORDER BY 
                                 (CASE 
@@ -151,7 +152,7 @@ def get_classifica_modelli():
         conn.close()
 
 
-@fastapi_app.get("/get_opponent_trophies/{opponent_username}")
+@fastapi_app.get("/get_opponent_data/{opponent_username}")
 def get_opponent_data(opponent_username: str):
 
     conn = get_connection()
@@ -161,15 +162,15 @@ def get_opponent_data(opponent_username: str):
 
         # Cerca l'utente per email
         cursor.execute(
-            "SELECT trophies FROM users WHERE username = %s",
+            "SELECT id_user, trophies FROM users WHERE username = %s",
             (opponent_username,)
         ) 
-        trophies = cursor.fetchone()
+        data = cursor.fetchone()
 
-        if not trophies:
+        if not data:
             raise HTTPException(status_code = 404, detail = "Utente non presente nel database")
         
-        return trophies
+        return data
     
     finally:
         cursor.close()
@@ -255,3 +256,38 @@ def update_stats(data: StatsUpdate):
         cursor.close()
         conn.close()
 
+chat_save_locks: dict[tuple[int,int,int], asyncio.Lock] = {}
+
+@fastapi_app.post("/save_chat_data")
+async def save_chat_data(chat_ids: ChatIds):
+    key = (chat_ids.user_id, chat_ids.opponent_id, chat_ids.llm_id)
+
+    if key not in chat_save_locks:
+        chat_save_locks[key] = asyncio.Lock()
+
+    async with chat_save_locks[key]:
+        conn = get_connection()
+        try:
+            cursor = conn.cursor()
+
+            # Controlla se la chat esiste già
+            cursor.execute("""
+                SELECT id_chat FROM chats 
+                WHERE user_id=%s AND opponent_id=%s AND llm_id=%s
+            """, key)
+            existing = cursor.fetchone()
+            if existing:
+                return {"message": "Chat già salvata", "id_chat": existing[0]}
+
+            # Inserisci nuova chat
+            cursor.execute("""
+                INSERT INTO chats (user_id, opponent_id, llm_id)
+                VALUES (%s, %s, %s)
+            """, key)
+            conn.commit()
+            chat_id = cursor.lastrowid
+
+            return {"message": "Chat salvata con successo", "id_chat": chat_id}
+        finally:
+            cursor.close()
+            conn.close()

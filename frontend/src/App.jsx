@@ -4,11 +4,12 @@ import ChatPage from './pages/ChatPage';
 import Index from './pages/Index';
 import Header from './components/Header';
 import { useEffect, useState } from 'react';
-import LogRegPopup from './components/account/LogRegPopup';
-import OkRegPopup from './components/account/OkRegPopup';
-import OkLoginPopup from './components/account/OkLoginPopup';
+import LogRegPopup from './components/logReg/LogRegPopup';
+import OkRegPopup from './components/logReg/OkRegPopup';
+import OkLoginPopup from './components/logReg/OkLoginPopup';
 import AccountPage from './pages/AccountPage';
 import RankingPage from './pages/RankingPage';
+import OldChatBox from './components/accountPage/OldChatBox';
 
 function App() {
 
@@ -66,6 +67,7 @@ function App() {
         <Route path = "/chat" element = { <ChatPage /> } />
         <Route path = "/classifica" element = { <RankingPage /> } />
         <Route path = "/account" element = { <AccountPage /> } />
+        <Route path = "/about" element = { <OldChatBox opponent={"avversario"} result={"vittoria"}/> } />
         {/* <Route path = "/classifica" element = { <LogRegPopup /> } /> */}
       </Routes>
     </div>

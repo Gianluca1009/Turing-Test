@@ -111,7 +111,7 @@ function ChatPage() {
         if (mode === "human") {
 
             try {
-              const res = await fetch(`http://localhost:8003/get_opponent_trophies/${data.opponent_username}`);
+              const res = await fetch(`http://localhost:8003/get_opponent_data/${data.opponent_username}`);
               if (!res.ok) {
                 throw new Error(`Errore HTTP: ${res.status}`);
               }
@@ -120,6 +120,7 @@ function ChatPage() {
               // Memorizza nel contesto
               setOpponentData({
                 name: data.opponent_username,
+                id: opponentData.id_user,
                 trophies: opponentData.trophies
               });
             } catch (err) {
@@ -142,6 +143,7 @@ function ChatPage() {
               if (model) {
                 setOpponentData({
                   type: "model",
+                  id: model.id_model,
                   name: model.name,
                   rank: model_ranking.indexOf(model) + 1,
                   victories: model.victories,
@@ -155,6 +157,32 @@ function ChatPage() {
       }
     }
   )}
+
+  // Funzione per salvare i dati della chat sul backend
+const saveChatData = async (userId, opponentId, llmId) => {
+  try {
+    const res = await fetch("http://localhost:8003/save_chat_data", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        user_id: user.id_user,
+        opponent_id: mode === "human" ? opponent.id : null,
+        llm_id: mode === "bot" ? opponent.id : null,
+      }),
+    });
+
+    if (!res.ok) {
+      throw new Error(`Errore HTTP: ${res.status}`);
+    }
+
+    const data = await res.json();
+    console.log("Chat salvata:", data.message);
+  } catch (err) {
+    console.error("Errore salvataggio chat:", err);
+  }
+};
 
   // Funzione utile a resettare i valori degli useState quando termina la chat
   const resetValues = () => {
